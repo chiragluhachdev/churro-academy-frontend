@@ -1,26 +1,84 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  /* ---- Churro Academy brand palette ---------------------------------- */
+  /* Sampled directly from the approved design comps. `cream` matches the
+     background baked into the hero panel asset, so the two blend seamlessly. */
+  --color-cream: #f9f6f2;
+  --color-cream-warm: #f8f3ed;
+  --color-pill: #f6f0e7;
+  --color-sand: #f2e9da;
+  --color-line: #e7dfd1;
+
+  --color-forest: #294b32;
+  --color-forest-deep: #163b29;
+  --color-forest-dark: #123926;
+  --color-forest-soft: #3f6a4c;
+
+  --color-ink: #1b2a20;
+  --color-muted: #6f6a60;
+  --color-gold: #d9a441;
+
+  /* ---- Type ---------------------------------------------------------- */
+  --font-display: var(--font-playfair), Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-script: var(--font-caveat), "Segoe Script", cursive;
+
+  /* ---- Motion -------------------------------------------------------- */
+  --ease-editorial: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  body {
+    background-color: var(--color-cream);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  ::selection {
+    background-color: var(--color-forest);
+    color: var(--color-cream);
+  }
+
+  /* Keyboard focus only — never a ring on mouse click. */
+  :focus-visible {
+    outline: 2px solid var(--color-forest);
+    outline-offset: 3px;
+    border-radius: 2px;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  /* Horizontal scrollers (course rail, testimonial rail) keep their momentum
+     scroll but drop the scrollbar chrome, which reads as clutter here. */
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
