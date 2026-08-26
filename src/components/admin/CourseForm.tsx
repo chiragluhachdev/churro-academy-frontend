@@ -146,7 +146,7 @@ export function CourseForm({ initialData, token }: CourseFormProps) {
             <label className="text-[0.85rem] font-medium text-ink">Level</label>
             <select
               value={formData.level}
-              onChange={(e) => setFormData({ ...formData, level: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, level: e.target.value as any })}
               className="w-full bg-cream border border-line/50 rounded-xl px-4 py-2.5 focus:outline-none focus:border-forest/50 transition-colors"
             >
               <option value="Beginner">Beginner</option>
