@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+
+import chefSimonePortrait from "@/assets/chef-simone.jpg";
 import Link from "next/link";
 import { ArrowRight, Award, BookOpen, Heart, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -14,7 +16,7 @@ import { Eyebrow } from "@/components/ui/Eyebrow";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Reveal } from "@/components/ui/Reveal";
 import { founder, founderStats } from "@/data/chefs";
-import { getFeaturedCourses } from "@/data/courses";
+import { fetchFeaturedCourses } from "@/lib/api";
 
 export const metadata: Metadata = {
   title: "Meet Chef Simone Kathuria",
@@ -35,8 +37,8 @@ const socialIcons = {
   pinterest: PinterestIcon,
 } as const;
 
-export default function ChefPage() {
-  const courses = getFeaturedCourses();
+export default async function ChefPage() {
+  const courses = await fetchFeaturedCourses();
 
   return (
     <>
@@ -53,7 +55,7 @@ export default function ChefPage() {
               <div className="relative">
                 <span className="bg-forest absolute inset-0 translate-x-4 translate-y-5 rounded-[2rem]" />
                 <Image
-                  src={founder.portrait}
+                  src={chefSimonePortrait}
                   alt={`${founder.name}, ${founder.title}`}
                   placeholder="blur"
                   sizes="(max-width: 1024px) 90vw, 34vw"

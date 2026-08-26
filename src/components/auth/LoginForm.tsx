@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Loader2 } from "lucide-react";
+import { signIn } from "next-auth/react";
 import { useState } from "react";
 import type { FormEvent } from "react";
 
@@ -13,25 +14,37 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function LoginForm() {
   const router = useRouter();
+  const params = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [remember, setRemember] = useState(true);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setFormError(null);
 
     const next: typeof errors = {};
     if (!EMAIL_RE.test(email)) next.email = "Enter a valid email address.";
-    if (password.length < 8) next.password = "Passwords are at least 8 characters.";
+    if (!password) next.password = "Enter your password.";
     setErrors(next);
     if (Object.keys(next).length > 0) return;
 
-    // No backend yet: this only simulates the round trip so the dashboard is
-    // reachable. Swap for NextAuth's signIn("credentials", …) in Phase 4b.
     setSubmitting(true);
-    window.setTimeout(() => router.push("/dashboard"), 600);
+    const result = await signIn("credentials", { email, password, redirect: false });
+
+    if (!result || result.error) {
+      setFormError("Email or password is incorrect.");
+      setSubmitting(false);
+      return;
+    }
+
+    // The session cookie now exists; ask the server where this user belongs.
+    const target = params.get("next");
+    const destination = await fetch("/api/me/home").then((r) => r.text());
+    router.push(target || destination || "/");
+    router.refresh();
   }
 
   return (
@@ -40,9 +53,7 @@ export function LoginForm() {
 
       <div className="my-7 flex items-center gap-4">
         <span className="bg-line h-px flex-1" />
-        <span className="text-muted text-[0.75rem] tracking-wide uppercase">
-          or with email
-        </span>
+        <span className="text-muted text-[0.75rem] tracking-wide uppercase">or with email</span>
         <span className="bg-line h-px flex-1" />
       </div>
 
@@ -67,25 +78,13 @@ export function LoginForm() {
           value={password}
           onChange={setPassword}
           error={errors.password}
-          action={
-            <Link
-              href="/forgot-password"
-              className="text-forest text-[0.78rem] font-medium hover:underline"
-            >
-              Forgot password?
-            </Link>
-          }
         />
 
-        <label className="text-muted flex cursor-pointer items-center gap-2.5 text-[0.85rem] select-none">
-          <input
-            type="checkbox"
-            checked={remember}
-            onChange={(event) => setRemember(event.target.checked)}
-            className="accent-forest size-4 rounded"
-          />
-          Keep me signed in
-        </label>
+        {formError && (
+          <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-[0.82rem] text-red-700">
+            {formError}
+          </p>
+        )}
 
         <button
           type="submit"
@@ -107,8 +106,12 @@ export function LoginForm() {
       </form>
 
       <p className="text-muted mt-5 text-[0.75rem] leading-relaxed">
-        Demo build — authentication isn&rsquo;t connected yet, so any valid-looking
-        details will open the dashboard.
+        Try the seeded admin: <span className="text-ink">admin@churroacademy.com</span> /{" "}
+        <span className="text-ink">churro-admin</span>
+      </p>
+
+      <p className="sr-only">
+        <Link href="/signup">Create an account</Link>
       </p>
     </div>
   );

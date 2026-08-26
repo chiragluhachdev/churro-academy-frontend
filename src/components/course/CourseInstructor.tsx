@@ -1,4 +1,6 @@
 import Image from "next/image";
+
+import chefSimonePortrait from "@/assets/chef-simone.jpg";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
@@ -13,7 +15,7 @@ export function CourseInstructor() {
         <Eyebrow>Your Instructor</Eyebrow>
         <div className="border-line/70 bg-cream-warm mt-5 flex flex-col items-start gap-5 rounded-2xl border p-6 sm:flex-row sm:items-center sm:gap-7">
           <Image
-            src={instructor.portrait}
+            src={chefSimonePortrait}
             alt={`${instructor.name}, ${instructor.title}`}
             placeholder="blur"
             width={96}

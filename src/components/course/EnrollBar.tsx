@@ -1,7 +1,8 @@
 "use client";
 
-import { ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
+
+import { EnrollButton } from "@/components/course/EnrollButton";
 
 import { formatPrice } from "@/lib/format";
 import { cn } from "@/lib/format";
@@ -11,7 +12,14 @@ import type { Course } from "@/types/course";
  * Mobile-only sticky bottom bar with price + "Enroll Now" button.
  * Hidden on desktop where the sidebar EnrollCard is visible.
  */
-export function EnrollBar({ course }: { course: Course }) {
+interface EnrollBarProps {
+  course: Course;
+  owned: boolean;
+  signedIn: boolean;
+  dashboardHref: string;
+}
+
+export function EnrollBar({ course, owned, signedIn, dashboardHref }: EnrollBarProps) {
   const [visible, setVisible] = useState(false);
   const price = course.discountPrice ?? course.price;
 
@@ -40,13 +48,15 @@ export function EnrollBar({ course }: { course: Course }) {
             </p>
           )}
         </div>
-        <a
-          href="#enroll"
-          className="bg-forest text-cream hover:bg-forest-deep active:translate-y-px inline-flex items-center gap-2 rounded-full px-6 py-3 text-[0.9rem] font-medium transition-all duration-300"
-        >
-          Enroll Now
-          <ArrowRight className="size-4" />
-        </a>
+        <div className="w-auto shrink-0">
+          <EnrollButton
+            courseId={course.id}
+            owned={owned}
+            signedIn={signedIn}
+            dashboardHref={dashboardHref}
+            className="w-auto px-6 py-3 text-[0.9rem]"
+          />
+        </div>
       </div>
     </div>
   );

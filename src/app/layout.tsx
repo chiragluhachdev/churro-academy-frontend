@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Caveat, Inter, Playfair_Display } from "next/font/google";
+import { SessionProvider } from "@/components/auth/SessionProvider";
 import { ChromeGate } from "@/components/layout/ChromeGate";
 import { Footer } from "@/components/layout/Footer";
 import { Navbar } from "@/components/layout/Navbar";
@@ -49,16 +50,18 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${playfair.variable} ${inter.variable} ${caveat.variable} h-full antialiased`}
     >
       <body className="bg-cream text-ink flex min-h-full flex-col overflow-x-hidden">
-        <ChromeGate>
-          <Navbar />
-        </ChromeGate>
+        <SessionProvider>
+          <ChromeGate>
+            <Navbar />
+          </ChromeGate>
         <main id="main" className="flex-1">
           {children}
         </main>
-        <ChromeGate>
-          <Footer />
-          <WhatsAppFab />
-        </ChromeGate>
+          <ChromeGate>
+            <Footer />
+            <WhatsAppFab />
+          </ChromeGate>
+        </SessionProvider>
       </body>
     </html>
   );

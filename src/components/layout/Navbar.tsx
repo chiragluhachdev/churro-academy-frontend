@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -13,6 +14,13 @@ import { cn } from "@/lib/format";
 
 export function Navbar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const signedIn = Boolean(session?.user);
+  const home = signedIn
+    ? session!.user.role === "admin"
+      ? "/admin"
+      : `/${session!.user.username}/dashboard`
+    : "/";
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -47,7 +55,7 @@ export function Navbar() {
           scrolled ? "py-3" : "py-5",
         )}
       >
-        <Logo className="shrink-0" />
+        <Logo href={home} className="shrink-0" />
 
         <ul className="hidden items-center gap-8 lg:flex">
           {primaryNav.map((link) => {
@@ -130,11 +138,11 @@ export function Navbar() {
                 <ArrowRight className="size-4" />
               </ButtonLink>
               <ButtonLink
-                href="/login"
+                href={signedIn ? home : "/login"}
                 variant="outline"
                 onClick={() => setMenuOpen(false)}
               >
-                Log in
+                {signedIn ? "Dashboard" : "Log in"}
               </ButtonLink>
             </div>
           </motion.div>

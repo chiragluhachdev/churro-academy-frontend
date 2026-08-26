@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+
+import chefSimonePortrait from "@/assets/chef-simone.jpg";
 import Link from "next/link";
 import { ArrowRight, BookOpenCheck, ChefHat, Infinity as InfinityIcon, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -60,7 +62,7 @@ export default function AboutPage() {
             <Reveal className="relative">
               <span className="bg-forest absolute inset-0 -translate-x-4 translate-y-5 rounded-[2rem]" />
               <Image
-                src={founder.portrait}
+                src={chefSimonePortrait}
                 alt="Chef Simone in the Churro Academy kitchen"
                 placeholder="blur"
                 sizes="(max-width: 1024px) 90vw, 45vw"

@@ -3,22 +3,24 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Award, Bell, BookOpen, LayoutGrid, LogOut, UserRound } from "lucide-react";
+import { Award, Bell, BookOpen, LayoutGrid, UserRound, Compass } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import type { ReactNode } from "react";
 
 import { cn } from "@/lib/format";
-import { student } from "@/data/student";
 
-const links: { label: string; href: string; icon: LucideIcon }[] = [
-  { label: "Overview", href: "/dashboard", icon: LayoutGrid },
-  { label: "My Courses", href: "/dashboard/courses", icon: BookOpen },
-  { label: "Certificates", href: "/dashboard/certificates", icon: Award },
-  { label: "Profile", href: "/dashboard/profile", icon: UserRound },
-];
+interface DashboardNavProps {
+  username: string;
+  name: string;
+  email: string;
+  avatar?: string;
+  /** Sign-out form, passed in from the server layout. */
+  signOut?: ReactNode;
+}
 
-function Wordmark() {
+function Wordmark({ href }: { href: string }) {
   return (
-    <Link href="/" aria-label="Churro Academy — home" className="flex items-center gap-3">
+    <Link href={href} aria-label="Churro Academy — dashboard" className="flex items-center gap-3">
       <Image
         src="/logo.png"
         alt=""
@@ -38,16 +40,24 @@ function Wordmark() {
   );
 }
 
-export function DashboardNav() {
+export function DashboardNav({ username, name, email, avatar, signOut }: DashboardNavProps) {
   const pathname = usePathname();
+  const base = `/${username}/dashboard`;
+
+  const links: { label: string; href: string; icon: LucideIcon }[] = [
+    { label: "Overview", href: base, icon: LayoutGrid },
+    { label: "My Courses", href: `${base}/courses`, icon: BookOpen },
+    { label: "Certificates", href: `${base}/certificates`, icon: Award },
+    { label: "Explore", href: `${base}/explore`, icon: Compass },
+    { label: "Profile", href: `${base}/profile`, icon: UserRound },
+  ];
+
   const isActive = (href: string) => pathname === href;
 
   return (
     <>
-      {/* Phone: app-style top bar. Navigation lives in the bottom tab bar, so
-          there is no drawer to open here. */}
       <header className="border-line/70 bg-cream sticky top-0 z-40 flex items-center justify-between border-b px-5 py-3.5 lg:hidden">
-        <Wordmark />
+        <Wordmark href={base} />
         <button
           type="button"
           aria-label="Notifications"
@@ -61,7 +71,6 @@ export function DashboardNav() {
         </button>
       </header>
 
-      {/* Phone: fixed bottom tabs. */}
       <nav
         aria-label="Dashboard"
         className="border-line/70 bg-cream/95 fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden"
@@ -78,17 +87,8 @@ export function DashboardNav() {
                 active ? "text-forest" : "text-muted",
               )}
             >
-              <Icon
-                className="size-[1.35rem]"
-                strokeWidth={active ? 2 : 1.6}
-                aria-hidden="true"
-              />
-              <span
-                className={cn(
-                  "text-[0.68rem] leading-none",
-                  active ? "font-semibold" : "font-medium",
-                )}
-              >
+              <Icon className="size-[1.35rem]" strokeWidth={active ? 2 : 1.6} aria-hidden="true" />
+              <span className={cn("text-[0.68rem] leading-none", active ? "font-semibold" : "font-medium")}>
                 {label}
               </span>
             </Link>
@@ -96,9 +96,8 @@ export function DashboardNav() {
         })}
       </nav>
 
-      {/* Desktop sidebar. */}
       <aside className="border-line/70 bg-cream-warm/60 sticky top-0 hidden h-screen w-[17rem] shrink-0 flex-col border-r px-6 py-8 lg:flex">
-        <Wordmark />
+        <Wordmark href={base} />
 
         <nav aria-label="Dashboard" className="mt-9 flex flex-1 flex-col gap-1">
           {links.map(({ label, href, icon: Icon }) => {
@@ -124,29 +123,19 @@ export function DashboardNav() {
 
         <div className="border-line/70 mt-6 border-t pt-5">
           <div className="flex items-center gap-3">
-            <Image
-              src={student.avatar}
-              alt=""
-              width={40}
-              height={40}
-              className="size-10 rounded-full object-cover"
-            />
+            {avatar ? (
+              <Image src={avatar} alt="" width={40} height={40} className="size-10 rounded-full object-cover" />
+            ) : (
+              <span className="bg-forest text-cream font-display flex size-10 shrink-0 items-center justify-center rounded-full text-[0.95rem] font-semibold">
+                {name.charAt(0).toUpperCase()}
+              </span>
+            )}
             <span className="min-w-0">
-              <span className="text-ink block truncate text-[0.85rem] font-semibold">
-                {student.name}
-              </span>
-              <span className="text-muted block truncate text-[0.75rem]">
-                {student.email}
-              </span>
+              <span className="text-ink block truncate text-[0.85rem] font-semibold">{name}</span>
+              <span className="text-muted block truncate text-[0.75rem]">{email}</span>
             </span>
           </div>
-          <Link
-            href="/login"
-            className="text-muted hover:text-forest mt-4 flex items-center gap-3 rounded-xl px-4 py-2.5 text-[0.85rem] transition-colors"
-          >
-            <LogOut className="size-4" strokeWidth={1.6} aria-hidden="true" />
-            Sign out
-          </Link>
+          <div className="mt-4">{signOut}</div>
         </div>
       </aside>
     </>

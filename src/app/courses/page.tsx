@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { CourseCard } from "@/components/course/CourseCard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Reveal } from "@/components/ui/Reveal";
-import { courses } from "@/data/courses";
+import { fetchCourses } from "@/lib/api";
 
 export const metadata: Metadata = {
   title: "Courses",
@@ -11,7 +11,8 @@ export const metadata: Metadata = {
     "Every Churro Academy course — cakes, churros, French pastry, breads and more, taught step by step with lifetime access.",
 };
 
-export default function CoursesPage() {
+export default async function CoursesPage() {
+  const courses = await fetchCourses();
   const categories = [...new Set(courses.map((course) => course.category))];
 
   return (

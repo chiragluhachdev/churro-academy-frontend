@@ -1,4 +1,6 @@
 import Image from "next/image";
+
+import chefSimonePortrait from "@/assets/chef-simone.jpg";
 import Link from "next/link";
 import { Award, BookOpen, Heart, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -57,7 +59,7 @@ export function Instructor() {
               {/* Offset disc, so the portrait reads as a composition not a sticker. */}
               <span className="bg-forest absolute inset-0 translate-x-4 translate-y-5 rounded-full" />
               <Image
-                src={instructor.portrait}
+                src={chefSimonePortrait}
                 alt={`${instructor.name}, ${instructor.title}`}
                 placeholder="blur"
                 sizes="(max-width: 1024px) 22rem, 24vw"

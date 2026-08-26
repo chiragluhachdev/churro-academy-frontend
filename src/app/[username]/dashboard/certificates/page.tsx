@@ -5,16 +5,29 @@ import { Award, Download } from "lucide-react";
 
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { Reveal } from "@/components/ui/Reveal";
-import { certificates, formatDate, student } from "@/data/student";
-import { courses } from "@/data/courses";
+import { formatDate } from "@/lib/format";
+import { fetchMyEnrollments } from "@/lib/api";
+import { requireSession } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Certificates" };
 
-export default function CertificatesPage() {
-  const earned = certificates.flatMap((certificate) => {
-    const course = courses.find((entry) => entry.slug === certificate.courseSlug);
-    return course ? [{ ...certificate, course }] : [];
-  });
+/** Deterministic credential id from the course slug, e.g. CA-CFS-8842. */
+function credentialId(slug: string, userId: string): string {
+  const initials = slug
+    .split("-")
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("")
+    .slice(0, 3)
+    .padEnd(3, "X");
+  let hash = 0;
+  for (const char of `${slug}${userId}`) hash = (hash * 31 + char.charCodeAt(0)) % 10000;
+  return `CA-${initials}-${String(hash).padStart(4, "0")}`;
+}
+
+export default async function CertificatesPage() {
+  const { user, accessToken } = await requireSession();
+  const enrolled = await fetchMyEnrollments(accessToken);
+  const earned = enrolled.filter((e) => e.isComplete);
 
   return (
     <div className="space-y-10">
@@ -36,7 +49,7 @@ export default function CertificatesPage() {
             Finish all the lessons in any course and your certificate appears here.
           </p>
           <Link
-            href="/dashboard/courses"
+            href={`/${user.username}/dashboard/courses`}
             className="bg-forest text-cream hover:bg-forest-deep mt-7 inline-flex rounded-full px-6 py-3 text-[0.9rem] font-medium transition-colors"
           >
             Back to my courses
@@ -44,10 +57,9 @@ export default function CertificatesPage() {
         </Reveal>
       ) : (
         <ul className="grid gap-7 lg:grid-cols-2">
-          {earned.map((certificate, index) => (
-            <Reveal as="li" key={certificate.id} delay={(index % 2) * 0.08}>
+          {earned.map((entry, index) => (
+            <Reveal as="li" key={entry.course.id} delay={(index % 2) * 0.08}>
               <article className="border-line/80 bg-cream-warm/50 overflow-hidden rounded-2xl border">
-                {/* Certificate face — deliberately styled like the printed article. */}
                 <div className="bg-forest-deep text-cream relative p-8">
                   <Image
                     src="/logo-mark.png"
@@ -61,27 +73,25 @@ export default function CertificatesPage() {
                       Certificate of Completion
                     </p>
                     <p className="font-display mt-4 text-[1.45rem] leading-[1.25] font-medium text-balance">
-                      {certificate.course.title}
+                      {entry.course.title}
                     </p>
-                    <p className="font-script text-cream/85 mt-5 text-2xl">
-                      {student.name}
-                    </p>
+                    <p className="font-script text-cream/85 mt-5 text-2xl">{user.name}</p>
                   </div>
                 </div>
 
                 <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-5">
                   <div>
                     <p className="text-muted text-[0.75rem]">
-                      Issued {formatDate(certificate.issuedOn)}
+                      Issued {formatDate(entry.completedAt ?? entry.lastOpenedAt)}
                     </p>
                     <p className="text-ink mt-1 font-mono text-[0.78rem]">
-                      {certificate.credentialId}
+                      {credentialId(entry.course.slug, user.id)}
                     </p>
                   </div>
                   <button
                     type="button"
                     disabled
-                    title="PDF export arrives with the backend"
+                    title="PDF export is not built yet"
                     className="border-line text-ink inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-[0.82rem] font-medium disabled:cursor-not-allowed disabled:opacity-55"
                   >
                     <Download className="size-3.5" aria-hidden="true" />

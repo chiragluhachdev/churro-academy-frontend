@@ -4,17 +4,19 @@ import Image from "next/image";
 import { cn } from "@/lib/format";
 
 interface LogoProps {
+  /** Where the mark links. Defaults to the marketing home page. */
+  href?: string;
   /** `cream` is for use on the dark forest sections (footer). */
   tone?: "forest" | "cream";
   className?: string;
 }
 
-export function Logo({ tone = "forest", className }: LogoProps) {
+export function Logo({ tone = "forest", className, href = "/" }: LogoProps) {
   const onDark = tone === "cream";
 
   return (
     <Link
-      href="/"
+      href={href}
       aria-label="Churro Academy — home"
       className={cn(
         "group inline-flex items-center gap-3 transition-opacity hover:opacity-90",

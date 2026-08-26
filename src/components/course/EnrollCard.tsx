@@ -9,12 +9,19 @@ import {
   PlayCircle,
 } from "lucide-react";
 
-import { ButtonLink } from "@/components/ui/Button";
+import { EnrollButton } from "@/components/course/EnrollButton";
 import { Reveal } from "@/components/ui/Reveal";
 import { formatPrice } from "@/lib/format";
 import type { Course } from "@/types/course";
 
-export function EnrollCard({ course }: { course: Course }) {
+interface EnrollCardProps {
+  course: Course;
+  owned: boolean;
+  signedIn: boolean;
+  dashboardHref: string;
+}
+
+export function EnrollCard({ course, owned, signedIn, dashboardHref }: EnrollCardProps) {
   const price = course.discountPrice ?? course.price;
 
   return (
@@ -37,10 +44,12 @@ export function EnrollCard({ course }: { course: Course }) {
 
         {/* CTA */}
         <div className="px-7 pt-6 pb-5">
-          <ButtonLink href="#enroll" className="w-full text-center">
-            Enroll Now
-            <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
-          </ButtonLink>
+          <EnrollButton
+            courseId={course.id}
+            owned={owned}
+            signedIn={signedIn}
+            dashboardHref={dashboardHref}
+          />
         </div>
 
         {/* Course meta */}

@@ -1,3 +1,6 @@
+import { redirect } from "next/navigation";
+
+import { getSession } from "@/lib/session";
 import { FeaturedCourses } from "@/components/sections/FeaturedCourses";
 import { FinalCta } from "@/components/sections/FinalCta";
 import { Hero } from "@/components/sections/Hero";
@@ -12,7 +15,9 @@ import { WhyLearn } from "@/components/sections/WhyLearn";
  * the What Is pillars, which stay). `lg:order-*` restores the desktop sequence
  * without rendering any section twice.
  */
-export default function HomePage() {
+export default async function HomePage() {
+  const session = await getSession();
+
   return (
     <div className="flex flex-col">
       <div className="lg:order-1">

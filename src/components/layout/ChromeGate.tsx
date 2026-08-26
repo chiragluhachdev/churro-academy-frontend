@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
 /** Routes that supply their own shell instead of the marketing chrome. */
-const APP_ROUTES = ["/login", "/signup", "/dashboard"];
+const APP_ROUTES = ["/login", "/signup", "/admin"];
 
 /**
  * Hides the marketing navbar and footer on the auth screens and the student
@@ -13,9 +13,10 @@ const APP_ROUTES = ["/login", "/signup", "/dashboard"];
  */
 export function ChromeGate({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const isAppRoute = APP_ROUTES.some(
-    (route) => pathname === route || pathname.startsWith(`${route}/`),
-  );
+  
+  const isAppRoute = 
+    APP_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`)) ||
+    pathname.includes("/dashboard");
 
   if (isAppRoute) return null;
   return <>{children}</>;

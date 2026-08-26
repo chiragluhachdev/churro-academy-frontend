@@ -1,7 +1,3 @@
-import type { StaticImageData } from "next/image";
-
-import chefSimone from "@/assets/chef-simone.jpg";
-
 export interface ChefStat {
   value: string;
   label: string;
@@ -18,7 +14,6 @@ export interface Chef {
   bio: string;
   /** Longer bio paragraphs for the /chef page. */
   longBio: string[];
-  portrait: StaticImageData;
   avatar: string;
   specialities: string[];
   stats: ChefStat[];
@@ -44,7 +39,6 @@ export const founder: Chef = {
     "Every course on the platform is hers: she writes the curriculum, tests each recipe until it is genuinely repeatable in a home kitchen, and films the lessons herself. The mistakes stay in the footage on purpose — watching a batch fail and get corrected teaches more than watching a perfect one.",
     "She teaches across the whole catalogue, from a first tray of cookies through to laminated doughs, and answers questions in the student community personally.",
   ],
-  portrait: chefSimone,
   avatar:
     "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=160&h=160&fit=crop&crop=faces&q=80&auto=format",
   specialities: [

@@ -1,56 +1,96 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Check, Loader2 } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { useState } from "react";
 import type { FormEvent } from "react";
 
 import { Field } from "@/components/auth/Field";
-import { student } from "@/data/student";
 
-/** Frontend-only: edits stay in local state until the account API exists. */
-export function ProfileForm() {
-  const [name, setName] = useState(student.name);
-  const [email, setEmail] = useState(student.email);
-  const [saved, setSaved] = useState(false);
+export function ProfileForm({
+  initialName,
+  initialUsername,
+  email,
+}: {
+  initialName: string;
+  initialUsername: string;
+  email: string;
+}) {
+  const router = useRouter();
+  const { update } = useSession();
+  const [name, setName] = useState(initialName);
+  const [username, setUsername] = useState(initialUsername);
+  const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSaved(true);
-    window.setTimeout(() => setSaved(false), 2600);
+    setStatus("saving");
+    setError(null);
+
+    const response = await fetch("/api/account", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, username }),
+    });
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      setError(data.error ?? "Could not save changes.");
+      setStatus("idle");
+      return;
+    }
+
+    // The username is baked into the backend JWT, so fold the refreshed token
+    // into the session as well as the new name.
+    await update({
+      user: { name: data.user.name, username: data.user.username },
+      accessToken: data.token,
+    });
+    setStatus("saved");
+    window.setTimeout(() => setStatus("idle"), 2600);
+
+    if (data.user.username !== initialUsername) {
+      router.replace(`/${data.user.username}/dashboard/profile`);
+    }
+    router.refresh();
   }
 
   return (
     <form onSubmit={handleSubmit} noValidate className="max-w-md space-y-5">
       <Field label="Full name" name="name" value={name} onChange={setName} autoComplete="name" />
       <Field
-        label="Email"
-        name="email"
-        type="email"
-        value={email}
-        onChange={setEmail}
-        autoComplete="email"
+        label="Username"
+        name="username"
+        value={username}
+        onChange={setUsername}
+        error={error ?? undefined}
       />
+      <p className="text-muted -mt-2 text-[0.75rem]">
+        Your dashboard lives at <span className="text-ink">/{username || "…"}/dashboard</span>
+      </p>
+      <Field label="Email" name="email" type="email" value={email} onChange={() => {}} />
+      <p className="text-muted -mt-2 text-[0.75rem]">Email changes aren&rsquo;t supported yet.</p>
 
       <div className="flex items-center gap-4 pt-1">
         <button
           type="submit"
-          className="bg-forest text-cream hover:bg-forest-deep inline-flex rounded-full px-6 py-3 text-[0.9rem] font-medium transition-colors duration-300"
+          disabled={status === "saving"}
+          className="bg-forest text-cream hover:bg-forest-deep inline-flex items-center gap-2 rounded-full px-6 py-3 text-[0.9rem] font-medium transition-colors duration-300 disabled:opacity-70"
         >
+          {status === "saving" && <Loader2 className="size-4 animate-spin" />}
           Save changes
         </button>
         <p role="status" aria-live="polite" className="text-forest text-[0.82rem]">
-          {saved && (
+          {status === "saved" && (
             <span className="inline-flex items-center gap-1.5">
               <Check className="size-4" aria-hidden="true" />
-              Saved locally
+              Saved
             </span>
           )}
         </p>
       </div>
-
-      <p className="text-muted text-[0.75rem] leading-relaxed">
-        Demo build — changes aren&rsquo;t persisted yet, so they reset on reload.
-      </p>
     </form>
   );
 }

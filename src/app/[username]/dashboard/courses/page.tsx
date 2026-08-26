@@ -6,14 +6,17 @@ import { ArrowRight, CheckCircle2, Clock } from "lucide-react";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { ProgressBar } from "@/components/dashboard/ProgressBar";
 import { Reveal } from "@/components/ui/Reveal";
-import { formatDate, getEnrolledCourses } from "@/data/student";
+import { formatDate } from "@/lib/format";
+import { fetchMyEnrollments } from "@/lib/api";
+import { requireSession } from "@/lib/session";
 
 export const metadata: Metadata = { title: "My Courses" };
 
-export default function MyCoursesPage() {
-  const enrolled = getEnrolledCourses();
-  const inProgress = enrolled.filter((entry) => !entry.isComplete);
-  const completed = enrolled.filter((entry) => entry.isComplete);
+export default async function MyCoursesPage() {
+  const { accessToken } = await requireSession();
+  const enrolled = await fetchMyEnrollments(accessToken);
+  const inProgress = enrolled.filter((e) => !e.isComplete);
+  const completed = enrolled.filter((e) => e.isComplete);
 
   return (
     <div className="space-y-12">
@@ -21,9 +24,25 @@ export default function MyCoursesPage() {
         <DashboardHeader
           eyebrow="My Courses"
           title="Everything you own."
-          lede={`${enrolled.length} courses, yours for life. ${completed.length} finished so far.`}
+          lede={
+            enrolled.length === 0
+              ? "Nothing here yet — every course you buy stays yours for life."
+              : `${enrolled.length} course${enrolled.length === 1 ? "" : "s"}, yours for life. ${completed.length} finished so far.`
+          }
         />
       </Reveal>
+
+      {enrolled.length === 0 && (
+        <Reveal className="border-line/80 rounded-2xl border border-dashed px-8 py-14 text-center">
+          <p className="text-muted text-[0.92rem]">You haven&rsquo;t enrolled in anything yet.</p>
+          <Link
+            href="./explore"
+            className="bg-forest text-cream hover:bg-forest-deep mt-6 inline-flex rounded-full px-6 py-3 text-[0.9rem] font-medium transition-colors"
+          >
+            Browse courses
+          </Link>
+        </Reveal>
+      )}
 
       {[
         { heading: "In progress", items: inProgress },
@@ -41,9 +60,9 @@ export default function MyCoursesPage() {
 
               <ul className="mt-6 space-y-5">
                 {items.map((entry, index) => (
-                  <Reveal as="li" key={entry.courseSlug} delay={(index % 4) * 0.05}>
+                  <Reveal as="li" key={entry.course.id} delay={(index % 4) * 0.05}>
                     <Link
-                      href={`/courses/${entry.course.slug}`}
+                      href={`./courses/${entry.course.slug}`}
                       className="group border-line/80 hover:border-forest/25 flex flex-col gap-5 rounded-2xl border p-5 transition-colors duration-300 sm:flex-row sm:items-center"
                     >
                       <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden rounded-xl sm:aspect-square sm:w-28">
@@ -71,8 +90,8 @@ export default function MyCoursesPage() {
 
                         <p className="text-muted mt-1.5 text-[0.82rem]">
                           {entry.isComplete
-                            ? `Finished ${formatDate(entry.completedOn ?? entry.lastOpened)}`
-                            : `Next — ${entry.nextLesson}`}
+                            ? `Finished ${formatDate(entry.completedAt ?? entry.lastOpenedAt)}`
+                            : `Last opened ${formatDate(entry.lastOpenedAt)}`}
                         </p>
 
                         <div className="mt-4 flex items-center gap-4">

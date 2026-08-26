@@ -1,15 +1,22 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { AuthShell } from "@/components/auth/AuthShell";
 import { LoginForm } from "@/components/auth/LoginForm";
+import { getSession } from "@/lib/session";
 
 export const metadata: Metadata = {
   title: "Log in",
   description: "Sign in to your Churro Academy account to continue learning.",
 };
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const session = await getSession();
+  if (session) {
+    redirect(session.user.role === "admin" ? "/admin" : `/${session.user.username}/dashboard`);
+  }
+
   return (
     <AuthShell
       title="Welcome back."

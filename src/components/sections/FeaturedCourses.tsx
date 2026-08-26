@@ -5,10 +5,10 @@ import { CourseCard } from "@/components/course/CourseCard";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { Rail } from "@/components/ui/Rail";
 import { Reveal } from "@/components/ui/Reveal";
-import { getFeaturedCourses } from "@/data/courses";
+import { fetchFeaturedCourses } from "@/lib/api";
 
-export function FeaturedCourses() {
-  const featured = getFeaturedCourses();
+export async function FeaturedCourses() {
+  const featured = await fetchFeaturedCourses();
 
   return (
     <section className="bg-cream">
