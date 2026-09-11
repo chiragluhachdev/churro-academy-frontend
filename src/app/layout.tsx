@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Caveat, Inter, Playfair_Display } from "next/font/google";
 import { SessionProvider } from "@/components/auth/SessionProvider";
+import { ChatWidget } from "@/components/chat/ChatWidget";
 import { ChromeGate } from "@/components/layout/ChromeGate";
 import { Footer } from "@/components/layout/Footer";
 import { Navbar } from "@/components/layout/Navbar";
-import { WhatsAppFab } from "@/components/layout/WhatsAppFab";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -59,7 +59,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </main>
           <ChromeGate>
             <Footer />
-            <WhatsAppFab />
+            <ChatWidget />
           </ChromeGate>
         </SessionProvider>
       </body>
