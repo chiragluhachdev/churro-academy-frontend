@@ -27,19 +27,38 @@ const caveat = Caveat({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://churroacademy.com"),
+  metadataBase: new URL("https://www.churroacademyglobal.com"),
   title: {
     default: "Churro Academy — Master the Art of Baking, Your Way",
     template: "%s · Churro Academy",
   },
   description:
     "Churro Academy turns your passion for desserts into real skills. Learn from expert pastry chefs through structured, step-by-step online baking courses.",
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
   openGraph: {
     title: "Churro Academy — Master the Art of Baking, Your Way",
     description:
       "Learn baking from expert chefs through structured, step-by-step online courses.",
     type: "website",
     siteName: "Churro Academy",
+    images: [
+      {
+        url: "/logo.png",
+        width: 512,
+        height: 512,
+        alt: "Churro Academy Logo",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary",
+    title: "Churro Academy — Master the Art of Baking, Your Way",
+    description:
+      "Learn baking from expert chefs through structured, step-by-step online courses.",
+    images: ["/logo.png"],
   },
 };
 
