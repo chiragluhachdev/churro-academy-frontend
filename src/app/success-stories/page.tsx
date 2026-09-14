@@ -6,7 +6,7 @@ import { FinalCta } from "@/components/sections/FinalCta";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Reveal } from "@/components/ui/Reveal";
 import { StarRating } from "@/components/ui/StarRating";
-import { testimonials } from "@/data/testimonials";
+import { fetchTestimonials } from "@/lib/api";
 
 export const metadata: Metadata = {
   title: "Success Stories",
@@ -14,7 +14,8 @@ export const metadata: Metadata = {
     "Bakers who took a Churro Academy course and what changed for them afterwards.",
 };
 
-export default function SuccessStoriesPage() {
+export default async function SuccessStoriesPage() {
+  const testimonials = await fetchTestimonials();
   const stories = testimonials.filter((testimonial) => testimonial.story);
   const shortOnes = testimonials.filter((testimonial) => !testimonial.story);
 

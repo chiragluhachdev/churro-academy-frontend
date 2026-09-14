@@ -1,14 +1,16 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Plus, Edit3, Eye, EyeOff } from "lucide-react";
+import { Plus, Eye, EyeOff } from "lucide-react";
 import { adminApi } from "@/lib/api";
-import { requireSession } from "@/lib/session";
+import { requireAdmin } from "@/lib/session";
+import { CourseRowActions } from "@/components/admin/CourseRowActions";
+import { formatPrice } from "@/lib/format";
 import { Reveal } from "@/components/ui/Reveal";
 
 export const metadata = { title: "Admin - Courses" };
 
 export default async function AdminCoursesPage() {
-  const { accessToken } = await requireSession();
+  const { accessToken } = await requireAdmin();
   const courses = await adminApi.courses(accessToken);
 
   return (
@@ -50,7 +52,7 @@ export default async function AdminCoursesPage() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-4">
                         <div className="relative size-12 rounded-lg overflow-hidden shrink-0">
-                          <Image src={course.thumbnail} alt={course.title} fill className="object-cover" />
+                          <Image src={course.thumbnail} alt={course.title} fill sizes="48px" className="object-cover" />
                         </div>
                         <div>
                           <p className="font-medium text-ink text-[0.95rem]">{course.title}</p>
@@ -65,19 +67,24 @@ export default async function AdminCoursesPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 font-medium text-ink">
-                      ${course.discountPrice ?? course.price}
+                      {formatPrice(course.discountPrice ?? course.price)}
+                      {course.discountPrice != null && (
+                        <span className="text-muted ml-2 text-[0.8rem] font-normal line-through">
+                          {formatPrice(course.price)}
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-muted">
                       {course.enrollmentCount} student{course.enrollmentCount !== 1 && 's'}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <Link
-                        href={`/admin/courses/${course.id}/edit`}
-                        className="text-forest hover:text-forest-deep inline-flex items-center gap-1.5 font-medium"
-                      >
-                        <Edit3 className="size-4" />
-                        Edit
-                      </Link>
+                      <CourseRowActions
+                        id={course.id}
+                        slug={course.slug}
+                        title={course.title}
+                        published={course.published}
+                        enrollmentCount={course.enrollmentCount}
+                      />
                     </td>
                   </tr>
                 ))}

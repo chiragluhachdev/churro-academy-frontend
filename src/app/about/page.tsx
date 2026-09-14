@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 
-import chefSimonePortrait from "@/assets/chef-simone.jpg";
 import Link from "next/link";
 import { ArrowRight, BookOpenCheck, ChefHat, Infinity as InfinityIcon, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -9,7 +7,8 @@ import type { LucideIcon } from "lucide-react";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Reveal } from "@/components/ui/Reveal";
-import { founder } from "@/data/chefs";
+import { ChefPortrait } from "@/components/chef/ChefPortrait";
+import { fetchChef } from "@/lib/api";
 
 export const metadata: Metadata = {
   title: "About",
@@ -47,7 +46,8 @@ const milestones = [
   { year: "2026", title: "Ten courses, one promise", body: "Every course still written, tested and taught by Simone." },
 ];
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const chef = await fetchChef();
   return (
     <>
       <PageHeader
@@ -61,10 +61,11 @@ export default function AboutPage() {
           <div className="grid items-center gap-14 lg:grid-cols-2 lg:gap-16">
             <Reveal className="relative">
               <span className="bg-forest absolute inset-0 -translate-x-4 translate-y-5 rounded-[2rem]" />
-              <Image
-                src={chefSimonePortrait}
-                alt="Chef Simone in the Churro Academy kitchen"
-                placeholder="blur"
+              <ChefPortrait
+                url={chef.portrait}
+                alt={`${chef.name} in the Churro Academy kitchen`}
+                width={800}
+                height={600}
                 sizes="(max-width: 1024px) 90vw, 45vw"
                 className="relative aspect-[4/3] w-full rounded-[2rem] object-cover"
               />

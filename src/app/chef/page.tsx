@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 
-import chefSimonePortrait from "@/assets/chef-simone.jpg";
 import Link from "next/link";
 import { ArrowRight, Award, BookOpen, Heart, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -15,7 +14,8 @@ import { CourseCard } from "@/components/course/CourseCard";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Reveal } from "@/components/ui/Reveal";
-import { founder, founderStats } from "@/data/chefs";
+import { ChefPortrait } from "@/components/chef/ChefPortrait";
+import { fetchChef } from "@/lib/api";
 import { fetchFeaturedCourses } from "@/lib/api";
 
 export const metadata: Metadata = {
@@ -38,6 +38,9 @@ const socialIcons = {
 } as const;
 
 export default async function ChefPage() {
+  const founder = await fetchChef();
+  // Signature line under the portrait: "Chef Simone Kathuria" -> "Simone".
+  const signature = founder.name.replace(/^chef\s+/i, "").split(/\s+/)[0];
   const courses = await fetchFeaturedCourses();
 
   return (
@@ -54,10 +57,9 @@ export default async function ChefPage() {
             <Reveal className="lg:sticky lg:top-28">
               <div className="relative">
                 <span className="bg-forest absolute inset-0 translate-x-4 translate-y-5 rounded-[2rem]" />
-                <Image
-                  src={chefSimonePortrait}
+                <ChefPortrait
+                  url={founder.portrait}
                   alt={`${founder.name}, ${founder.title}`}
-                  placeholder="blur"
                   sizes="(max-width: 1024px) 90vw, 34vw"
                   className="relative aspect-square w-full rounded-[2rem] object-cover"
                 />
@@ -72,7 +74,7 @@ export default async function ChefPage() {
                 </span>
               </div>
 
-              <p className="font-script text-forest mt-12 text-3xl">Simone</p>
+              <p className="font-script text-forest mt-12 text-3xl">{signature}</p>
 
               <ul className="mt-6 flex items-center gap-3">
                 {founder.socials.map((social) => {
@@ -124,7 +126,7 @@ export default async function ChefPage() {
 
               <Reveal delay={0.15} className="mt-12">
                 <ul className="border-line/70 grid gap-px overflow-hidden rounded-2xl border sm:grid-cols-2">
-                  {founderStats.map((stat) => {
+                  {founder.stats.map((stat) => {
                     const Icon = statIcons[stat.icon];
                     return (
                       <li

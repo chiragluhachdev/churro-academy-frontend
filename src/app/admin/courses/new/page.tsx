@@ -1,11 +1,11 @@
 import { CourseForm } from "@/components/admin/CourseForm";
 import { Reveal } from "@/components/ui/Reveal";
-import { requireSession } from "@/lib/session";
+import { requireAdmin } from "@/lib/session";
 
 export const metadata = { title: "Admin - New Course" };
 
 export default async function NewCoursePage() {
-  const { accessToken } = await requireSession();
+  await requireAdmin();
 
   return (
     <div className="space-y-10">
@@ -19,7 +19,7 @@ export default async function NewCoursePage() {
       </Reveal>
 
       <Reveal delay={0.1}>
-        <CourseForm token={accessToken} />
+        <CourseForm />
       </Reveal>
     </div>
   );

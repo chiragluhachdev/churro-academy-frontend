@@ -7,7 +7,7 @@ import { PostCard } from "@/components/blog/PostCard";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Reveal } from "@/components/ui/Reveal";
-import { formatPostDate, getFeaturedPost, posts } from "@/data/posts";
+import { fetchPosts, formatPostDate } from "@/lib/api";
 
 export const metadata: Metadata = {
   title: "Blog",
@@ -15,9 +15,23 @@ export const metadata: Metadata = {
     "Technique notes, ingredient deep-dives and behind-the-scenes writing from the Churro Academy kitchen.",
 };
 
-export default function BlogPage() {
-  const featured = getFeaturedPost();
-  const rest = posts.filter((post) => post.id !== featured.id);
+export default async function BlogPage() {
+  const posts = await fetchPosts();
+  const featured = posts.find((post) => post.featured) ?? posts[0];
+  const rest = posts.filter((post) => post.id !== featured?.id);
+
+  if (!featured) {
+    return (
+      <>
+        <PageHeader eyebrow="Blog" title="Notes from the kitchen." />
+        <section className="bg-cream">
+          <p className="text-muted mx-auto max-w-[1400px] px-5 py-24 text-center sm:px-8">
+            New articles are on their way — check back soon.
+          </p>
+        </section>
+      </>
+    );
+  }
 
   return (
     <>
@@ -51,7 +65,7 @@ export default function BlogPage() {
                   </span>
                   <span>{featured.category}</span>
                   <span aria-hidden="true">·</span>
-                  <time dateTime={featured.date}>{formatPostDate(featured.date)}</time>
+                  <time dateTime={featured.publishedAt}>{formatPostDate(featured.publishedAt)}</time>
                   <span aria-hidden="true">·</span>
                   <span>{featured.readingMinutes} min read</span>
                 </p>

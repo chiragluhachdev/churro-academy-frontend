@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { formatPostDate, type Post } from "@/data/posts";
+import { formatPostDate, type Post } from "@/lib/api";
 
 export function PostCard({ post }: { post: Post }) {
   return (
@@ -20,7 +20,7 @@ export function PostCard({ post }: { post: Post }) {
           <p className="text-muted flex flex-wrap items-center gap-2.5 text-[0.75rem]">
             <span className="text-forest font-medium">{post.category}</span>
             <span aria-hidden="true">·</span>
-            <time dateTime={post.date}>{formatPostDate(post.date)}</time>
+            <time dateTime={post.publishedAt}>{formatPostDate(post.publishedAt)}</time>
             <span aria-hidden="true">·</span>
             <span>{post.readingMinutes} min read</span>
           </p>

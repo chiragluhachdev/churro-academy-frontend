@@ -1,6 +1,5 @@
 import Image from "next/image";
 
-import chefSimonePortrait from "@/assets/chef-simone.jpg";
 import Link from "next/link";
 import { Award, BookOpen, Heart, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -13,7 +12,8 @@ import {
 
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { Reveal } from "@/components/ui/Reveal";
-import { instructor } from "@/data/chefs";
+import { ChefPortrait } from "@/components/chef/ChefPortrait";
+import { fetchChef } from "@/lib/api";
 
 const statIcons: Record<string, LucideIcon> = {
   experience: Award,
@@ -28,7 +28,9 @@ const socialIcons = {
   pinterest: PinterestIcon,
 } as const;
 
-export function Instructor() {
+export async function Instructor() {
+  const instructor = await fetchChef();
+
   return (
     <section className="bg-cream">
       <div className="mx-auto max-w-[1400px] px-5 py-12 sm:px-8 sm:py-20 lg:py-24">
@@ -58,10 +60,9 @@ export function Instructor() {
             <div className="relative aspect-square">
               {/* Offset disc, so the portrait reads as a composition not a sticker. */}
               <span className="bg-forest absolute inset-0 translate-x-4 translate-y-5 rounded-full" />
-              <Image
-                src={chefSimonePortrait}
+              <ChefPortrait
+                url={instructor.portrait}
                 alt={`${instructor.name}, ${instructor.title}`}
-                placeholder="blur"
                 sizes="(max-width: 1024px) 22rem, 24vw"
                 className="relative size-full rounded-full object-cover"
               />

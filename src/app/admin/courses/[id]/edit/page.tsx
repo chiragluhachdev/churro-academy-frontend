@@ -1,20 +1,27 @@
 import { CourseForm } from "@/components/admin/CourseForm";
 import { Reveal } from "@/components/ui/Reveal";
-import { requireSession } from "@/lib/session";
+import { requireAdmin } from "@/lib/session";
 import { api } from "@/lib/api";
 import { notFound } from "next/navigation";
 import type { AdminCourse } from "@/lib/api";
 
 export const metadata = { title: "Admin - Edit Course" };
 
-export default async function EditCoursePage({ params }: { params: { id: string } }) {
-  const { accessToken } = await requireSession();
+export default async function EditCoursePage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  // Next 16 hands dynamic params over as a Promise; reading `.id` directly gave
+  // undefined, so every edit link 404'd.
+  const { id } = await params;
+  const { accessToken } = await requireAdmin();
   
   // We can just fetch the course details from the public endpoint for editing, 
   // though the admin endpoint gives us extra data (published, enrollmentCount)
   // Let's get the full course list from admin and find it to get those extra fields.
   const courses = await api<{ courses: AdminCourse[] }>("/admin/courses", { token: accessToken }).then(r => r.courses);
-  const course = courses.find((c) => c.id === params.id);
+  const course = courses.find((c) => c.id === id);
 
   if (!course) {
     notFound();
@@ -32,7 +39,7 @@ export default async function EditCoursePage({ params }: { params: { id: string 
       </Reveal>
 
       <Reveal delay={0.1}>
-        <CourseForm initialData={course} token={accessToken} />
+        <CourseForm initialData={course} />
       </Reveal>
     </div>
   );

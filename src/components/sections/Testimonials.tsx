@@ -6,9 +6,15 @@ import { Eyebrow } from "@/components/ui/Eyebrow";
 import { Rail } from "@/components/ui/Rail";
 import { Reveal } from "@/components/ui/Reveal";
 import { StarRating } from "@/components/ui/StarRating";
-import { testimonials } from "@/data/testimonials";
+import { fetchFeaturedTestimonials, fetchTestimonials } from "@/lib/api";
 
-export function Testimonials() {
+export async function Testimonials() {
+  // Admin picks which reviews appear here; if none are flagged, fall back to the
+  // first few published ones so the section is never empty.
+  const featured = await fetchFeaturedTestimonials();
+  const testimonials = featured.length > 0 ? featured : (await fetchTestimonials()).slice(0, 4);
+  if (testimonials.length === 0) return null;
+
   return (
     <section className="bg-cream">
       <div className="mx-auto max-w-[1400px] px-5 pb-12 sm:px-8 sm:pb-20 lg:pb-24">

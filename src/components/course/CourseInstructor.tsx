@@ -1,23 +1,23 @@
-import Image from "next/image";
 
-import chefSimonePortrait from "@/assets/chef-simone.jpg";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { Reveal } from "@/components/ui/Reveal";
-import { instructor } from "@/data/chefs";
+import { ChefPortrait } from "@/components/chef/ChefPortrait";
+import { fetchChef } from "@/lib/api";
 
-export function CourseInstructor() {
+export async function CourseInstructor() {
+  const instructor = await fetchChef();
+
   return (
     <section>
       <Reveal>
         <Eyebrow>Your Instructor</Eyebrow>
         <div className="border-line/70 bg-cream-warm mt-5 flex flex-col items-start gap-5 rounded-2xl border p-6 sm:flex-row sm:items-center sm:gap-7">
-          <Image
-            src={chefSimonePortrait}
+          <ChefPortrait
+            url={instructor.portrait}
             alt={`${instructor.name}, ${instructor.title}`}
-            placeholder="blur"
             width={96}
             height={96}
             sizes="96px"

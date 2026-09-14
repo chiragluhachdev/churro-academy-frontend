@@ -5,7 +5,7 @@ import { Eyebrow } from "@/components/ui/Eyebrow";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Reveal } from "@/components/ui/Reveal";
 import { StarRating } from "@/components/ui/StarRating";
-import { testimonials } from "@/data/testimonials";
+import { fetchTestimonials } from "@/lib/api";
 
 export const metadata: Metadata = {
   title: "Reviews",
@@ -13,10 +13,12 @@ export const metadata: Metadata = {
     "Every review left by Churro Academy students, with the rating breakdown behind the average.",
 };
 
-export default function ReviewsPage() {
+export default async function ReviewsPage() {
+  const testimonials = await fetchTestimonials();
   const total = testimonials.length;
+  // Guard the empty case: 0/0 would render "NaN" as the headline average.
   const average =
-    testimonials.reduce((sum, review) => sum + review.rating, 0) / total;
+    total === 0 ? 0 : testimonials.reduce((sum, review) => sum + review.rating, 0) / total;
 
   // Highest rating first so the distribution bar reads top-down.
   const distribution = [5, 4, 3, 2, 1].map((stars) => {

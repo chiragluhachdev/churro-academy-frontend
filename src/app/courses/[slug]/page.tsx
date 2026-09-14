@@ -60,7 +60,7 @@ export default async function CoursePage({ params }: CoursePageProps) {
               <WhatYouWillLearn items={course.whatYouWillLearn} />
               <Curriculum modules={course.curriculum} />
               <CourseInstructor />
-              <CourseReviews courseSlug={course.slug} />
+              <CourseReviews courseTitle={course.title} />
               {course.faqs && course.faqs.length > 0 && (
                 <CourseFAQSection faqs={course.faqs} />
               )}

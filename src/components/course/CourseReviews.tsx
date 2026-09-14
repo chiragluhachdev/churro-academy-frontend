@@ -4,10 +4,12 @@ import { Quote } from "lucide-react";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { Reveal } from "@/components/ui/Reveal";
 import { StarRating } from "@/components/ui/StarRating";
-import { getTestimonialsByCourse } from "@/data/testimonials";
+import { fetchTestimonialsForCourse } from "@/lib/api";
 
-export function CourseReviews({ courseSlug }: { courseSlug: string }) {
-  const reviews = getTestimonialsByCourse(courseSlug);
+export async function CourseReviews({ courseTitle }: { courseTitle: string }) {
+  const reviews = await fetchTestimonialsForCourse(courseTitle);
+  // No reviews yet: leave the section out rather than show an empty heading.
+  if (reviews.length === 0) return null;
 
   return (
     <section>
