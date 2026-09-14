@@ -16,11 +16,9 @@ import { WhyLearn } from "@/components/sections/WhyLearn";
  * without rendering any section twice.
  */
 export default async function HomePage() {
-  // Signed-in visitors skip the sales page and land in their own space.
+  // Only the admin can ever be signed in — send them straight to their console.
   const session = await getSession();
-  if (session) {
-    redirect(session.user.role === "admin" ? "/admin" : `/${session.user.username}/dashboard`);
-  }
+  if (session) redirect("/admin");
 
   return (
     <div className="flex flex-col">

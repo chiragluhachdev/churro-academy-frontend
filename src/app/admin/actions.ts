@@ -6,6 +6,7 @@ import {
   ApiError,
   CACHE_TAGS,
   api,
+  type BillingInfo,
   type Chef,
   type CourseInput,
   type Post,
@@ -98,6 +99,21 @@ export async function saveChefAction(input: ChefInput) {
   );
 }
 
+/* --------------------------------------------------------------- billing -- */
+
+export async function saveBillingAction(input: BillingInfo) {
+  return run(CACHE_TAGS.billing, (token) =>
+    api("/admin/content/billing", { method: "PUT", token, body: input }),
+  );
+}
+
+/* ----------------------------------------------------------------- orders -- */
+
+/** Resends the enrollment email with whatever video links exist right now. */
+export async function resendOrderEmailAction(orderId: string) {
+  return run(null, (token) => api(`/admin/orders/${orderId}/resend-email`, { method: "POST", token }));
+}
+
 /* ---------------------------------------------------------------- uploads -- */
 
 export interface UploadTicket {
@@ -110,9 +126,9 @@ export interface UploadTicket {
 
 /**
  * Signs a direct browser-to-Cloudinary upload. Files never pass through Next —
- * server actions cap bodies at 1 MB, which rules out real photos, let alone
- * lesson videos. The API secret stays on the backend.
+ * server actions cap bodies at 1 MB, which rules out real photos. The API
+ * secret stays on the backend.
  */
-export async function getUploadTicketAction(kind: "image" | "video"): Promise<ActionResult<UploadTicket>> {
-  return run(null, (token) => api<UploadTicket>("/upload/signature", { method: "POST", token, body: { kind } }));
+export async function getUploadTicketAction(): Promise<ActionResult<UploadTicket>> {
+  return run(null, (token) => api<UploadTicket>("/upload/signature", { method: "POST", token }));
 }

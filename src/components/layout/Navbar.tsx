@@ -16,12 +16,9 @@ import { cn } from "@/lib/format";
 export function Navbar() {
   const pathname = usePathname();
   const { data: session } = useSession();
+  // The only account that can ever sign in is the admin's — checkout is guest-only.
   const signedIn = Boolean(session?.user);
-  const home = signedIn
-    ? session!.user.role === "admin"
-      ? "/admin"
-      : `/${session!.user.username}/dashboard`
-    : "/";
+  const home = signedIn ? "/admin" : "/";
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -121,7 +118,7 @@ export function Navbar() {
                       className="text-ink hover:bg-forest/5 flex items-center gap-2.5 px-4 py-3 text-[0.88rem]"
                     >
                       <LayoutDashboard className="size-4" />
-                      {session!.user.role === "admin" ? "Admin dashboard" : "My dashboard"}
+                      Admin dashboard
                     </Link>
                     <form action={logoutAction} className="border-line/50 border-t">
                       <button

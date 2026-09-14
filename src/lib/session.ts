@@ -31,12 +31,13 @@ export async function requireSession(returnTo?: string): Promise<Session> {
   return session;
 }
 
+/**
+ * There's no student dashboard — checkout is guest-only, so the only account
+ * that can ever sign in is the admin's. `requireSession` above already
+ * covers "signed in or not"; this only exists to read the role explicitly.
+ */
 export async function requireAdmin(): Promise<Session> {
   const session = await requireSession("/admin");
-  if (session.user.role !== "admin") redirect(dashboardPath(session.user.username));
+  if (session.user.role !== "admin") redirect("/");
   return session;
-}
-
-export function dashboardPath(username: string): string {
-  return `/${username}/dashboard`;
 }

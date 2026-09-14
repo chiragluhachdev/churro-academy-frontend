@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Pencil, PlayCircle } from "lucide-react";
+import { ArrowRight, Pencil } from "lucide-react";
 
 import { useCheckout } from "@/components/checkout/CheckoutProvider";
 import { cn } from "@/lib/format";
@@ -10,7 +10,7 @@ import { cn } from "@/lib/format";
  * looking — see CheckoutProvider.enroll.
  */
 export function EnrollButton({ className }: { className?: string }) {
-  const { viewer, owned, enroll } = useCheckout();
+  const { viewer, enroll } = useCheckout();
 
   const base = cn(
     "group inline-flex w-full items-center justify-center gap-2.5 rounded-full px-7 py-3.5 text-[0.95rem] font-medium whitespace-nowrap transition-colors duration-300",
@@ -22,15 +22,6 @@ export function EnrollButton({ className }: { className?: string }) {
       <button type="button" onClick={enroll} className={cn(base, "border-forest/30 text-forest hover:bg-forest/5 border")}>
         <Pencil className="size-4" />
         Edit course
-      </button>
-    );
-  }
-
-  if (owned) {
-    return (
-      <button type="button" onClick={enroll} className={cn(base, "bg-forest-deep text-cream hover:bg-forest")}>
-        <PlayCircle className="size-4" />
-        Go to my course
       </button>
     );
   }

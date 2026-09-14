@@ -1,11 +1,11 @@
 import {
   ArrowRight,
-  Award,
   BarChart3,
   BookOpen,
   Check,
   Clock,
   Infinity as InfinityIcon,
+  Mail,
   PlayCircle,
 } from "lucide-react";
 
@@ -67,9 +67,9 @@ export function EnrollCard({ course }: EnrollCardProps) {
             <span className="text-ink font-medium">Lifetime</span>
           </li>
           <li className="flex items-center gap-3 py-3.5">
-            <Award className="text-forest size-[1.1rem]" strokeWidth={1.5} aria-hidden="true" />
-            <span className="text-muted flex-1">Certificate</span>
-            <span className="text-ink font-medium">Yes</span>
+            <Mail className="text-forest size-[1.1rem]" strokeWidth={1.5} aria-hidden="true" />
+            <span className="text-muted flex-1">Delivery</span>
+            <span className="text-ink font-medium">Email + WhatsApp</span>
           </li>
         </ul>
 

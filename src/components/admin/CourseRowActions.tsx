@@ -42,7 +42,7 @@ export function CourseRowActions({
         action={() => deleteCourseAction(id)}
         confirmText={
           enrollmentCount > 0
-            ? `"${title}" has ${enrollmentCount} enrolled student${enrollmentCount === 1 ? "" : "s"}. Deleting it removes the course from their dashboards too.\n\nIf you just want to stop selling it, unpublish it instead.\n\nDelete anyway?`
+            ? `"${title}" has ${enrollmentCount} paid order${enrollmentCount === 1 ? "" : "s"} against it, so it can't be deleted.\n\nIf you just want to stop selling it, unpublish it instead.\n\nTry anyway?`
             : `Delete "${title}"? This can't be undone.`
         }
       />

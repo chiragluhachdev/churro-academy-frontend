@@ -10,7 +10,7 @@ import { CourseFAQSection } from "@/components/course/CourseFAQ";
 import { EnrollCard } from "@/components/course/EnrollCard";
 import { EnrollBar } from "@/components/course/EnrollBar";
 import { CheckoutProvider, type Viewer } from "@/components/checkout/CheckoutProvider";
-import { fetchCourse, fetchCourses, fetchMyEnrollments } from "@/lib/api";
+import { fetchCourse, fetchCourses } from "@/lib/api";
 import { getSession } from "@/lib/session";
 
 interface CoursePageProps {
@@ -45,22 +45,11 @@ export default async function CoursePage({ params, searchParams }: CoursePagePro
   const [course, session] = await Promise.all([fetchCourse(slug), getSession()]);
   if (!course) notFound();
 
-  const viewer: Viewer = !session ? "guest" : session.user.role === "admin" ? "admin" : "student";
-  // Admins never own courses; only a student's enrollments count.
-  const enrollments = viewer === "student" ? await fetchMyEnrollments(session!.accessToken) : [];
-  const owned = enrollments.some((entry) => entry.course.slug === course.slug);
-  const playerHref = session ? `/${session.user.username}/dashboard/courses/${course.slug}` : "/login";
+  const viewer: Viewer = session ? "admin" : "guest";
   const adminEditHref = `/admin/courses/${course.id}/edit`;
 
   return (
-    <CheckoutProvider
-      courseId={course.id}
-      viewer={viewer}
-      owned={owned}
-      playerHref={playerHref}
-      adminEditHref={adminEditHref}
-      autoOpen={query.enroll === "1"}
-    >
+    <CheckoutProvider course={course} viewer={viewer} adminEditHref={adminEditHref} autoOpen={query.enroll === "1"}>
       <div className="pt-28 pb-20 lg:pt-32">
         <div className="mx-auto max-w-[1400px] px-5 sm:px-8">
           <div className="lg:grid lg:grid-cols-[1fr_380px] lg:gap-12 xl:gap-16">

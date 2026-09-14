@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { Link2 as Link2Icon } from "lucide-react";
 import { useState, useTransition } from "react";
 import type { FormEvent } from "react";
 
@@ -86,9 +87,9 @@ export function CourseForm({ initialData }: { initialData?: AdminCourse }) {
         setError(`Lesson ${si + 1}.${untitled + 1} needs a title.`);
         return;
       }
-      const badLink = section.lessons.findIndex((l) => l.videoUrl && !/^https?:\/\//i.test(l.videoUrl));
+      const badLink = section.lessons.findIndex((l) => l.videoUrl?.trim() && !/^https?:\/\//i.test(l.videoUrl.trim()));
       if (badLink !== -1) {
-        setError(`Lesson ${si + 1}.${badLink + 1}: the video must be a full https:// link.`);
+        setError(`Lesson ${si + 1}.${badLink + 1}: the video link must start with https://.`);
         return;
       }
     }
@@ -111,9 +112,7 @@ export function CourseForm({ initialData }: { initialData?: AdminCourse }) {
           id: lesson.id,
           title: lesson.title.trim(),
           duration: Number(lesson.duration) || 0,
-          preview: Boolean(lesson.preview),
           videoUrl: (lesson.videoUrl ?? "").trim(),
-          description: lesson.description ?? "",
         })),
       })),
       whatYouWillLearn: clean(whatYouWillLearn),
@@ -232,8 +231,11 @@ export function CourseForm({ initialData }: { initialData?: AdminCourse }) {
 
       <Card title="Curriculum">
         <p className="text-muted -mt-2 text-[0.85rem]">
-          Group lessons into sections. Each lesson can have a video, notes and a free-preview flag. The
-          lesson count on the site comes from here.
+          Group lessons into sections — this is the syllabus shown on the course page, and the lesson count
+          on the site comes from here. Add a video link (YouTube, Drive, Vimeo…) on any lesson using the{" "}
+          <Link2Icon className="mx-0.5 inline size-3" strokeWidth={2} aria-hidden="true" /> icon — the site
+          never shows it, but as soon as someone pays it&rsquo;s emailed to them automatically, and sent on
+          WhatsApp as a backup.
         </p>
         <CurriculumEditor
           value={curriculum}

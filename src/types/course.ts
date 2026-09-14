@@ -9,20 +9,17 @@ export type CourseCategory =
   | "Basics";
 
 export interface CurriculumLesson {
-  /** Stable id; progress is stored against it. */
+  /** Stable id, kept across admin edits. */
   id: string;
   title: string;
-  /** Runtime in minutes. */
+  /** Runtime in minutes — shown in the syllabus on the course page. */
   duration: number;
-  preview?: boolean;
   /**
-   * Only present for free-preview lessons in public data, and for every lesson
-   * in the player once the course is owned.
+   * Where the recording lives (YouTube, Drive, Vimeo…). Admin-only — the
+   * public course page never sees this; it's what the enrollment email
+   * sends a buyer once they've paid.
    */
   videoUrl?: string;
-  /** True when a video exists, even if its link is withheld. */
-  hasVideo?: boolean;
-  description?: string;
 }
 
 export interface CurriculumModule {

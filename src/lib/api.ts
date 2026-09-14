@@ -55,6 +55,7 @@ export const CACHE_TAGS = {
   testimonials: "testimonials",
   posts: "posts",
   chef: "chef",
+  billing: "billing",
 } as const;
 
 /* ------------------------------------------------------------ catalogue -- */
@@ -88,49 +89,12 @@ export async function fetchCourse(slug: string): Promise<Course | null> {
   }
 }
 
-/* ---------------------------------------------------------- enrollments -- */
-
-export interface Enrollment {
-  id: string;
-  course: Course;
-  completedLessons: number;
-  completedLessonIds: string[];
-  lastLessonId: string;
-  purchasedAt?: string;
-  progress: number;
-  isComplete: boolean;
-  lastOpenedAt: string;
-  completedAt?: string;
-  amountPaid: number;
-  paymentStatus: "paid" | "pending" | "failed";
-}
-
-export async function fetchMyEnrollments(token: string): Promise<Enrollment[]> {
-  const { enrollments } = await api<{ enrollments: Enrollment[] }>("/enrollments/me", { token });
-  return enrollments;
-}
-
-
-export function studentStats(enrollments: Enrollment[]) {
-  const lessonsDone = enrollments.reduce((sum, e) => sum + e.completedLessons, 0);
-  const totalLessons = enrollments.reduce((sum, e) => sum + e.course.lessons, 0);
-  const completed = enrollments.filter((e) => e.isComplete);
-  return {
-    coursesEnrolled: enrollments.length,
-    coursesCompleted: completed.length,
-    lessonsDone,
-    totalLessons,
-    certificates: completed.length,
-    overallProgress: totalLessons === 0 ? 0 : Math.round((lessonsDone / totalLessons) * 100),
-  };
-}
-
 /* ---------------------------------------------------------------- admin -- */
 
 export interface AdminStats {
-  users: number;
   courses: number;
-  enrollments: number;
+  paidOrders: number;
+  customers: number;
   revenue: number;
 }
 
@@ -139,23 +103,56 @@ export interface AdminCourse extends Course {
   enrollmentCount: number;
 }
 
-export interface AdminUser {
-  id: string;
-  name: string;
-  username: string;
-  email: string;
-  role: "student" | "admin";
-  createdAt?: string;
-  enrollmentCount: number;
+export interface GstBreakdown {
+  totalAmount: number;
+  gstRate: number;
+  taxableValue: number;
+  gstAmount: number;
+  cgstAmount: number;
+  sgstAmount: number;
 }
 
-export interface AdminEnrollment {
+export type OrderStatus = "created" | "paid" | "failed" | "expired";
+
+/** One row in the billing/audit screen. */
+export interface AdminOrder {
   id: string;
-  user: { id: string; name: string; username: string; email: string } | null;
-  course: { title: string; slug: string } | null;
-  amountPaid: number;
-  paymentStatus: string;
-  createdAt: string;
+  invoiceNumber: string;
+  buyerName: string;
+  buyerEmail: string;
+  buyerPhone: string;
+  courseTitle: string;
+  amount: number;
+  listPrice: number;
+  status: OrderStatus;
+  provider: "dummy" | "razorpay";
+  gst: GstBreakdown;
+  createdAt?: string;
+  paidAt?: string;
+  emailSentAt?: string;
+  emailError: string;
+}
+
+/** Everything the printable invoice needs, for one order. */
+export interface AdminOrderDetail {
+  id: string;
+  invoiceNumber: string;
+  status: OrderStatus;
+  provider: "dummy" | "razorpay";
+  providerPaymentId: string;
+  amount: number;
+  listPrice: number;
+  currency: string;
+  gst: GstBreakdown;
+  createdAt?: string;
+  paidAt?: string;
+  buyer: { name: string; email: string; phone: string };
+  course: { title: string; slug: string };
+  seller: { companyName: string; gstin: string; address: string; email: string; phone: string };
+  emailSentAt?: string;
+  emailError: string;
+  /** What the enrollment email lists — which lessons have a video link set. */
+  emailSections: { title: string; lessons: { title: string; hasVideo: boolean }[] }[];
 }
 
 export const adminApi = {
@@ -163,12 +160,18 @@ export const adminApi = {
     api<{ stats: AdminStats }>("/admin/stats", { token }).then((r) => r.stats),
   courses: (token: string) =>
     api<{ courses: AdminCourse[] }>("/admin/courses", { token }).then((r) => r.courses),
-  users: (token: string) =>
-    api<{ users: AdminUser[] }>("/admin/users", { token }).then((r) => r.users),
-  enrollments: (token: string) =>
-    api<{ enrollments: AdminEnrollment[] }>("/admin/enrollments", { token }).then(
-      (r) => r.enrollments,
-    ),
+  /** The billing/audit screen. `status`/`q` narrow it; omit for everything. */
+  orders: (token: string, params?: { status?: OrderStatus; q?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.status) qs.set("status", params.status);
+    if (params?.q) qs.set("q", params.q);
+    const suffix = qs.toString() ? `?${qs}` : "";
+    return api<{ orders: AdminOrder[] }>(`/admin/orders${suffix}`, { token }).then((r) => r.orders);
+  },
+  order: (token: string, id: string) =>
+    api<{ order: AdminOrderDetail }>(`/admin/orders/${id}`, { token }).then((r) => r.order),
+  resendOrderEmail: (token: string, id: string) =>
+    api<{ ok: boolean }>(`/admin/orders/${id}/resend-email`, { method: "POST", token }),
   createCourse: (token: string, data: CourseInput) =>
     api<{ course: AdminCourse }>("/courses", { method: "POST", token, body: data }).then(
       (r) => r.course,
@@ -186,6 +189,10 @@ export const adminApi = {
     api<{ posts: Post[] }>("/admin/content/posts", { token }).then((r) => r.posts),
   deleteCourse: (token: string, id: string) =>
     api<{ ok: boolean }>(`/courses/${id}`, { method: "DELETE", token }),
+  updateBilling: (token: string, data: BillingInfo) =>
+    api<{ billing: BillingInfo }>("/admin/content/billing", { method: "PUT", token, body: data }).then(
+      (r) => r.billing,
+    ),
 };
 
 /** Fields the admin course form edits. */
@@ -310,6 +317,24 @@ export async function fetchChef(): Promise<Chef> {
   return chef;
 }
 
+/** The seller's own details, for the invoice and (lightly) the footer. Not secret. */
+export interface BillingInfo {
+  companyName: string;
+  gstin: string;
+  address: string;
+  email: string;
+  phone: string;
+  gstRate: number;
+}
+
+export async function fetchBilling(): Promise<BillingInfo> {
+  const { billing } = await api<{ billing: BillingInfo }>("/content/billing", {
+    revalidate: 300,
+    tags: [CACHE_TAGS.billing],
+  });
+  return billing;
+}
+
 export function formatPostDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-IN", {
     day: "numeric",
@@ -320,16 +345,24 @@ export function formatPostDate(iso: string): string {
 
 /* ---------------------------------------------------------------- checkout -- */
 
+/**
+ * A checkout order, seen by the guest who created it — there's no account,
+ * so the order id itself is what lets the browser come back to this one
+ * order for its status or its invoice.
+ */
 export interface CheckoutOrder {
   id: string;
-  status: "created" | "paid" | "failed" | "expired";
+  status: OrderStatus;
   provider: "dummy" | "razorpay";
   testMode: boolean;
   amount: number;
   listPrice: number;
   discount: number;
   currency: string;
-  expiresAt: string;
+  expiresAt?: string;
+  paidAt?: string;
+  invoiceNumber: string;
+  gst: GstBreakdown;
   course: {
     id: string;
     slug: string;
@@ -340,60 +373,14 @@ export interface CheckoutOrder {
     lessons: number;
     includedItems: string[];
   };
-  buyer: { name: string; email: string };
+  buyer: { name: string; email: string; phone: string };
+  seller: BillingInfo;
 }
 
-/* ------------------------------------------------------------------ player -- */
-
-export interface LearnProgress {
-  completedLessonIds: string[];
-  completedLessons: number;
-  totalLessons: number;
-  percent: number;
-  lastLessonId: string;
-  isComplete: boolean;
-}
-
-export async function fetchLearnCourse(token: string, slug: string) {
+export async function fetchOrder(id: string): Promise<CheckoutOrder | null> {
   try {
-    return await api<{ course: Course; progress: LearnProgress; preview: boolean }>(`/learn/${slug}`, { token });
-  } catch (error) {
-    if (error instanceof ApiError && (error.status === 403 || error.status === 404)) return null;
-    throw error;
-  }
-}
-
-/* ---------------------------------------------------------- admin: student -- */
-
-export interface AdminStudentDetail {
-  user: { id: string; name: string; username: string; email: string; role: string; createdAt?: string };
-  summary: {
-    coursesOwned: number;
-    coursesCompleted: number;
-    lessonsCompleted: number;
-    totalSpent: number;
-    paidOrders: number;
-    lastActiveAt?: string;
-  };
-  enrollments: (Enrollment & {
-    sections: { title: string; lessons: { id: string; title: string; duration: number; done: boolean }[] }[];
-  })[];
-  orders: {
-    id: string;
-    courseTitle: string;
-    amount: number;
-    listPrice: number;
-    status: string;
-    provider: string;
-    providerPaymentId: string;
-    createdAt?: string;
-    paidAt?: string;
-  }[];
-}
-
-export async function fetchAdminStudent(token: string, id: string): Promise<AdminStudentDetail | null> {
-  try {
-    return await api<AdminStudentDetail>(`/admin/users/${id}`, { token });
+    const { order } = await api<{ order: CheckoutOrder }>(`/orders/${id}`);
+    return order;
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) return null;
     throw error;

@@ -12,9 +12,9 @@ export default async function AdminOverviewPage() {
 
   const statCards = [
     { label: "Total Revenue", value: formatPrice(stats.revenue), icon: DollarSign },
-    { label: "Total Students", value: stats.users.toString(), icon: Users },
+    { label: "Customers", value: stats.customers.toString(), icon: Users },
     { label: "Active Courses", value: stats.courses.toString(), icon: BookOpen },
-    { label: "Enrollments", value: stats.enrollments.toString(), icon: CreditCard },
+    { label: "Paid Orders", value: stats.paidOrders.toString(), icon: CreditCard },
   ];
 
   return (
@@ -30,7 +30,7 @@ export default async function AdminOverviewPage() {
 
       <Reveal delay={0.1}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {statCards.map((stat, i) => (
+          {statCards.map((stat) => (
             <div key={stat.label} className="bg-cream-warm border border-line/50 rounded-2xl p-6 relative overflow-hidden">
               <div className="flex items-center gap-4">
                 <div className="bg-forest/10 p-3 rounded-xl">

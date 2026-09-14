@@ -42,7 +42,7 @@ export default async function AdminCoursesPage() {
                   <th className="px-6 py-4 font-medium uppercase tracking-wider text-[0.75rem]">Course</th>
                   <th className="px-6 py-4 font-medium uppercase tracking-wider text-[0.75rem]">Status</th>
                   <th className="px-6 py-4 font-medium uppercase tracking-wider text-[0.75rem]">Price</th>
-                  <th className="px-6 py-4 font-medium uppercase tracking-wider text-[0.75rem]">Enrollments</th>
+                  <th className="px-6 py-4 font-medium uppercase tracking-wider text-[0.75rem]">Sold</th>
                   <th className="px-6 py-4 font-medium uppercase tracking-wider text-[0.75rem] text-right">Actions</th>
                 </tr>
               </thead>
@@ -75,7 +75,7 @@ export default async function AdminCoursesPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 text-muted">
-                      {course.enrollmentCount} student{course.enrollmentCount !== 1 && 's'}
+                      {course.enrollmentCount} order{course.enrollmentCount !== 1 && 's'}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <CourseRowActions

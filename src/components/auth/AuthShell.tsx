@@ -4,22 +4,23 @@ import { ArrowLeft, Check } from "lucide-react";
 import type { ReactNode } from "react";
 
 const promises = [
-  "Lifetime access to every course you buy",
-  "Step-by-step lessons filmed close-up",
-  "Downloadable recipe cards and guides",
+  "Manage courses and the public site",
+  "See every order and its invoice",
+  "Everything configurable, no deploy needed",
 ];
 
 interface AuthShellProps {
   title: string;
   lede: string;
   children: ReactNode;
-  /** Shown under the form, e.g. the link across to the other auth page. */
-  footer: ReactNode;
+  /** Shown under the form, if there's anything to add. */
+  footer?: ReactNode;
 }
 
 /**
- * Split layout shared by login and signup: form on the cream side, brand panel
- * on the forest side. The panel is hidden below `lg`, where the form takes over.
+ * Split layout for the admin sign-in screen: form on the cream side, brand
+ * panel on the forest side. The panel is hidden below `lg`, where the form
+ * takes over.
  */
 export function AuthShell({ title, lede, children, footer }: AuthShellProps) {
   return (
@@ -52,7 +53,7 @@ export function AuthShell({ title, lede, children, footer }: AuthShellProps) {
 
             <div className="mt-8">{children}</div>
 
-            <div className="mt-8">{footer}</div>
+            {footer && <div className="mt-8">{footer}</div>}
           </div>
         </div>
       </div>
@@ -81,7 +82,7 @@ export function AuthShell({ title, lede, children, footer }: AuthShellProps) {
 
           <div>
             <p className="font-display text-[2.1rem] leading-[1.2] font-medium text-balance">
-              Learn the technique, not just the recipe.
+              The kitchen behind the kitchen.
             </p>
             <ul className="mt-9 space-y-4">
               {promises.map((promise) => (

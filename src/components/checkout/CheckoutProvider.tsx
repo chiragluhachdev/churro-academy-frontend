@@ -5,15 +5,13 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import type { ReactNode } from "react";
 
 import { CheckoutModal } from "@/components/checkout/CheckoutModal";
+import type { Course } from "@/types/course";
 
-export type Viewer = "guest" | "student" | "admin";
+export type Viewer = "guest" | "admin";
 
 interface CheckoutContextValue {
   viewer: Viewer;
-  owned: boolean;
-  playerHref: string;
-  adminEditHref: string;
-  /** Runs the right action for whoever is looking: log in, pay, or open. */
+  /** Runs the right action for whoever is looking: open checkout, or edit. */
   enroll: () => void;
 }
 
@@ -26,12 +24,10 @@ export function useCheckout() {
 }
 
 interface CheckoutProviderProps {
-  courseId: string;
+  course: Course;
   viewer: Viewer;
-  owned: boolean;
-  playerHref: string;
   adminEditHref: string;
-  /** The page was reached with ?enroll=1 (read server-side, so no Suspense boundary is needed). */
+  /** The page was reached with ?enroll=1 (read server-side), e.g. from a marketing link. */
   autoOpen: boolean;
   children: ReactNode;
 }
@@ -40,26 +36,23 @@ interface CheckoutProviderProps {
  * One checkout modal per course page. The page shows an enroll button in both
  * the desktop card and the mobile bar — each in a container hidden at the other
  * breakpoint — so the modal lives here, outside both, and they share it.
+ *
+ * There's no account to check ownership against (checkout is guest-only), so
+ * enrolling always just opens the modal for anyone but the admin.
  */
-export function CheckoutProvider({ courseId, viewer, owned, playerHref, adminEditHref, autoOpen, children }: CheckoutProviderProps) {
+export function CheckoutProvider({ course, viewer, adminEditHref, autoOpen, children }: CheckoutProviderProps) {
   const router = useRouter();
   const pathname = usePathname();
   // Computed once, from the server-read ?enroll=1 — not reacted to via an
   // effect, so there's no extra render and nothing for the
   // react-hooks/set-state-in-effect rule to flag.
-  const [open, setOpen] = useState(() => autoOpen && viewer === "student" && !owned);
+  const [open, setOpen] = useState(() => autoOpen && viewer === "guest");
   const urlTidied = useRef(false);
 
   const enroll = useCallback(() => {
-    if (owned) return router.push(playerHref);
     if (viewer === "admin") return router.push(adminEditHref);
-    if (viewer === "guest") {
-      // Come back to this page with the checkout already open.
-      router.push(`/login?next=${encodeURIComponent(`${pathname}?enroll=1`)}`);
-      return;
-    }
     setOpen(true);
-  }, [owned, viewer, router, pathname, playerHref, adminEditHref]);
+  }, [viewer, router, adminEditHref]);
 
   // Strip ?enroll=1 from the address bar, once, after the initial open above
   // has already been decided from it. No state to set here — just history.
@@ -70,11 +63,9 @@ export function CheckoutProvider({ courseId, viewer, owned, playerHref, adminEdi
   }, [autoOpen, router, pathname]);
 
   return (
-    <CheckoutContext.Provider value={{ viewer, owned, playerHref, adminEditHref, enroll }}>
+    <CheckoutContext.Provider value={{ viewer, enroll }}>
       {children}
-      {viewer === "student" && !owned && (
-        <CheckoutModal open={open} courseId={courseId} onClose={() => setOpen(false)} />
-      )}
+      {viewer === "guest" && <CheckoutModal open={open} course={course} onClose={() => setOpen(false)} />}
     </CheckoutContext.Provider>
   );
 }

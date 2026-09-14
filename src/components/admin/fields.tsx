@@ -103,7 +103,7 @@ export function ImageField({
     setUploading(true);
     setError(null);
     try {
-      onChange(await uploadFile(file, "image"));
+      onChange(await uploadFile(file));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed.");
     } finally {

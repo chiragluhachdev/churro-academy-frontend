@@ -2,29 +2,16 @@
 
 import { getUploadTicketAction } from "@/app/admin/actions";
 
-export const UPLOAD_LIMITS = {
-  image: { bytes: 10 * 1024 * 1024, label: "10 MB" },
-  // Cloudinary's per-file ceiling on standard plans. Longer videos: host on
-  // YouTube (unlisted) or Vimeo and paste the link instead.
-  video: { bytes: 100 * 1024 * 1024, label: "100 MB" },
-} as const;
+export const UPLOAD_LIMITS = { image: { bytes: 10 * 1024 * 1024, label: "10 MB" } } as const;
 
 /** Uploads straight to Cloudinary, reporting progress (0–100). Resolves to the file URL. */
-export async function uploadFile(
-  file: File,
-  kind: "image" | "video",
-  onProgress?: (percent: number) => void,
-): Promise<string> {
-  if (!file.type.startsWith(`${kind}/`)) throw new Error(`That file isn't ${kind === "image" ? "an image" : "a video"}.`);
-  if (file.size > UPLOAD_LIMITS[kind].bytes) {
-    throw new Error(
-      kind === "video"
-        ? `Videos must be under ${UPLOAD_LIMITS.video.label}. For longer lessons, upload to YouTube (unlisted) or Vimeo and paste the link.`
-        : `Images must be under ${UPLOAD_LIMITS.image.label}.`,
-    );
+export async function uploadFile(file: File, onProgress?: (percent: number) => void): Promise<string> {
+  if (!file.type.startsWith("image/")) throw new Error("That file isn't an image.");
+  if (file.size > UPLOAD_LIMITS.image.bytes) {
+    throw new Error(`Images must be under ${UPLOAD_LIMITS.image.label}.`);
   }
 
-  const ticket = await getUploadTicketAction(kind);
+  const ticket = await getUploadTicketAction();
   if (!ticket.ok) throw new Error(ticket.error);
   const { uploadUrl, apiKey, timestamp, folder, signature } = ticket.data;
 

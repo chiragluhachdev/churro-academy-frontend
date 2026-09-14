@@ -9,7 +9,7 @@ import {
   LayoutDashboard,
   MessageSquareQuote,
   Newspaper,
-  Users,
+  Receipt,
 } from "lucide-react";
 
 import { cn } from "@/lib/format";
@@ -20,8 +20,7 @@ const SECTIONS = [
     items: [
       { label: "Overview", href: "/admin", icon: LayoutDashboard },
       { label: "Courses", href: "/admin/courses", icon: BookOpen },
-      { label: "Enrollments", href: "/admin/enrollments", icon: CreditCard },
-      { label: "Students", href: "/admin/users", icon: Users },
+      { label: "Billing", href: "/admin/billing", icon: CreditCard },
     ],
   },
   {
@@ -30,6 +29,7 @@ const SECTIONS = [
       { label: "Reviews", href: "/admin/testimonials", icon: MessageSquareQuote },
       { label: "Blog", href: "/admin/blog", icon: Newspaper },
       { label: "Chef profile", href: "/admin/chef", icon: ChefHat },
+      { label: "Company details", href: "/admin/company", icon: Receipt },
     ],
   },
 ];

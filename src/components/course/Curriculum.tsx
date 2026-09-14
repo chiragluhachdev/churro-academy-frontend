@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Clock, Eye, PlayCircle } from "lucide-react";
+import { ChevronDown, Clock, PlayCircle } from "lucide-react";
 import { useState } from "react";
 
 import { Eyebrow } from "@/components/ui/Eyebrow";
@@ -92,12 +92,6 @@ export function Curriculum({ modules }: { modules: CurriculumModule[] }) {
                             {lesson.title}
                           </span>
                           <span className="flex shrink-0 items-center gap-3">
-                            {lesson.preview && (
-                              <span className="text-forest bg-forest/8 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[0.68rem] font-semibold uppercase">
-                                <Eye className="size-3" aria-hidden="true" />
-                                Preview
-                              </span>
-                            )}
                             <span className="text-muted inline-flex items-center gap-1 text-[0.78rem]">
                               <Clock className="size-3" aria-hidden="true" />
                               {lesson.duration}m

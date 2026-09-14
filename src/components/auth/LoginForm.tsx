@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { signIn } from "next-auth/react";
@@ -8,7 +7,6 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 
 import { Field } from "@/components/auth/Field";
-import { SocialButtons } from "@/components/auth/SocialButtons";
 import { safeNextPath } from "@/lib/safe-redirect";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -41,24 +39,16 @@ export function LoginForm() {
       return;
     }
 
-    // The session cookie now exists; ask the server where this user belongs.
-    // Only same-site paths — an unchecked ?next= is an open redirect.
+    // Only same-site paths — an unchecked ?next= is an open redirect. There's
+    // only ever one kind of account (the admin's), so absent a ?next= this
+    // always goes to /admin.
     const target = safeNextPath(params.get("next"));
-    const destination = await fetch("/api/me/home").then((r) => r.text());
-    router.push(target || destination || "/");
+    router.push(target || "/admin");
     router.refresh();
   }
 
   return (
     <div>
-      <SocialButtons />
-
-      <div className="my-7 flex items-center gap-4">
-        <span className="bg-line h-px flex-1" />
-        <span className="text-muted text-[0.75rem] tracking-wide uppercase">or with email</span>
-        <span className="bg-line h-px flex-1" />
-      </div>
-
       <form onSubmit={handleSubmit} noValidate className="space-y-5">
         <Field
           label="Email"
@@ -108,12 +98,8 @@ export function LoginForm() {
       </form>
 
       <p className="text-muted mt-5 text-[0.75rem] leading-relaxed">
-        Try the seeded admin: <span className="text-ink">admin@churroacademy.com</span> /{" "}
+        Admin sign-in: <span className="text-ink">admin@churroacademy.com</span> /{" "}
         <span className="text-ink">churro-admin</span>
-      </p>
-
-      <p className="sr-only">
-        <Link href="/signup">Create an account</Link>
       </p>
     </div>
   );
