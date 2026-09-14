@@ -5,8 +5,11 @@ import { useState, useTransition } from "react";
 import type { FormEvent } from "react";
 
 import { saveCourseAction } from "@/app/admin/actions";
-import { Card, Field, FormActions, ImageField, Toggle, inputClass } from "@/components/admin/fields";
+import { CurriculumEditor } from "@/components/admin/CurriculumEditor";
+import { Card, Field, FieldGroup, FormActions, ImageField, Toggle, inputClass } from "@/components/admin/fields";
+import { FaqEditor, StringListEditor } from "@/components/admin/ListEditor";
 import type { AdminCourse, CourseInput } from "@/lib/api";
+import type { CurriculumModule } from "@/types/course";
 
 const LEVELS = ["Beginner", "Intermediate", "Advanced"] as const;
 
@@ -36,12 +39,24 @@ export function CourseForm({ initialData }: { initialData?: AdminCourse }) {
     discountPrice: initialData?.discountPrice != null ? String(initialData.discountPrice) : "",
     level: (initialData?.level ?? "Beginner") as CourseInput["level"],
     duration: initialData?.duration ?? "",
-    lessons: String(initialData?.lessons ?? "1"),
     category: initialData?.category ?? "",
     badge: initialData?.badge ?? "",
     featured: initialData?.featured ?? false,
     published: initialData?.published ?? true,
   });
+  const [curriculum, setCurriculum] = useState<CurriculumModule[]>(
+    () => initialData?.curriculum ?? [],
+  );
+  const [whatYouWillLearn, setWhatYouWillLearn] = useState<string[]>(
+    () => initialData?.whatYouWillLearn ?? [],
+  );
+  const [includedItems, setIncludedItems] = useState<string[]>(
+    () => initialData?.includedItems ?? [],
+  );
+  const [requirements, setRequirements] = useState<string[]>(
+    () => initialData?.requirements ?? [],
+  );
+  const [faqs, setFaqs] = useState(() => initialData?.faqs ?? []);
 
   const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -55,18 +70,58 @@ export function CourseForm({ initialData }: { initialData?: AdminCourse }) {
       return;
     }
     const price = Number(form.price);
-    const discount = form.discountPrice === "" ? undefined : Number(form.discountPrice);
-    if (discount !== undefined && discount >= price) {
+    const discount = form.discountPrice === "" ? null : Number(form.discountPrice);
+    if (discount !== null && discount >= price) {
       setError("Sale price has to be lower than the regular price.");
       return;
     }
 
+    for (const [si, section] of curriculum.entries()) {
+      if (!section.title.trim()) {
+        setError(`Section ${si + 1} needs a title.`);
+        return;
+      }
+      const untitled = section.lessons.findIndex((l) => !l.title.trim());
+      if (untitled !== -1) {
+        setError(`Lesson ${si + 1}.${untitled + 1} needs a title.`);
+        return;
+      }
+      const badLink = section.lessons.findIndex((l) => l.videoUrl && !/^https?:\/\//i.test(l.videoUrl));
+      if (badLink !== -1) {
+        setError(`Lesson ${si + 1}.${badLink + 1}: the video must be a full https:// link.`);
+        return;
+      }
+    }
+    const lessonCount = curriculum.reduce((n, s) => n + s.lessons.length, 0);
+    if (form.published && lessonCount === 0) {
+      setError("Add at least one lesson before publishing — or turn Published off to save a draft.");
+      return;
+    }
+
+    const clean = (list: string[]) => list.map((v) => v.trim()).filter(Boolean);
     const payload: CourseInput = {
       ...form,
       price,
       discountPrice: discount,
-      lessons: Number(form.lessons),
-      badge: form.badge || undefined,
+      badge: form.badge.trim(),
+      curriculum: curriculum.map((section) => ({
+        ...section,
+        title: section.title.trim(),
+        lessons: section.lessons.map((lesson) => ({
+          id: lesson.id,
+          title: lesson.title.trim(),
+          duration: Number(lesson.duration) || 0,
+          preview: Boolean(lesson.preview),
+          videoUrl: (lesson.videoUrl ?? "").trim(),
+          description: lesson.description ?? "",
+        })),
+      })),
+      whatYouWillLearn: clean(whatYouWillLearn),
+      includedItems: clean(includedItems),
+      requirements: clean(requirements),
+      faqs: faqs
+        .map((f) => ({ question: f.question.trim(), answer: f.answer.trim() }))
+        .filter((f) => f.question && f.answer),
     };
 
     startTransition(async () => {
@@ -153,17 +208,6 @@ export function CourseForm({ initialData }: { initialData?: AdminCourse }) {
           <Field label="Duration" hint="e.g. 4h 10m">
             <input value={form.duration} onChange={(e) => set("duration", e.target.value)} className={inputClass} />
           </Field>
-          <Field label="Lessons">
-            <input
-              required
-              type="number"
-              min={1}
-              value={form.lessons}
-              onChange={(e) => set("lessons", e.target.value)}
-              className={inputClass}
-            />
-          </Field>
-          <div />
           <Field label="Price (₹)" hint="Whole rupees">
             <input
               required
@@ -184,6 +228,48 @@ export function CourseForm({ initialData }: { initialData?: AdminCourse }) {
             />
           </Field>
         </div>
+      </Card>
+
+      <Card title="Curriculum">
+        <p className="text-muted -mt-2 text-[0.85rem]">
+          Group lessons into sections. Each lesson can have a video, notes and a free-preview flag. The
+          lesson count on the site comes from here.
+        </p>
+        <CurriculumEditor
+          value={curriculum}
+          onChange={setCurriculum}
+          onUseDuration={(label) => set("duration", label)}
+        />
+      </Card>
+
+      <Card title="Course page content">
+        <FieldGroup label="What you'll learn">
+          <StringListEditor
+            value={whatYouWillLearn}
+            onChange={setWhatYouWillLearn}
+            placeholder="e.g. Temper chocolate for a glossy finish"
+            addLabel="Add outcome"
+          />
+        </FieldGroup>
+        <FieldGroup label="What's included">
+          <StringListEditor
+            value={includedItems}
+            onChange={setIncludedItems}
+            placeholder="e.g. Lifetime access"
+            addLabel="Add item"
+          />
+        </FieldGroup>
+        <FieldGroup label="Requirements" hint="Optional — what students need before starting.">
+          <StringListEditor
+            value={requirements}
+            onChange={setRequirements}
+            placeholder="e.g. A standard home oven"
+            addLabel="Add requirement"
+          />
+        </FieldGroup>
+        <FieldGroup label="Course FAQs" hint="Optional — shown on the course page.">
+          <FaqEditor value={faqs} onChange={setFaqs} />
+        </FieldGroup>
       </Card>
 
       <Card title="Images">

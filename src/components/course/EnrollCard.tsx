@@ -16,12 +16,9 @@ import type { Course } from "@/types/course";
 
 interface EnrollCardProps {
   course: Course;
-  owned: boolean;
-  signedIn: boolean;
-  dashboardHref: string;
 }
 
-export function EnrollCard({ course, owned, signedIn, dashboardHref }: EnrollCardProps) {
+export function EnrollCard({ course }: EnrollCardProps) {
   const price = course.discountPrice ?? course.price;
 
   return (
@@ -44,12 +41,7 @@ export function EnrollCard({ course, owned, signedIn, dashboardHref }: EnrollCar
 
         {/* CTA */}
         <div className="px-7 pt-6 pb-5">
-          <EnrollButton
-            courseId={course.id}
-            owned={owned}
-            signedIn={signedIn}
-            dashboardHref={dashboardHref}
-          />
+          <EnrollButton />
         </div>
 
         {/* Course meta */}

@@ -4,9 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, Menu, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ArrowRight, LayoutDashboard, LogOut, Menu, User as UserIcon, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
+import { logoutAction } from "@/app/actions/auth";
 import { Logo } from "@/components/brand/Logo";
 import { ButtonLink } from "@/components/ui/Button";
 import { primaryNav } from "@/data/site";
@@ -23,6 +24,17 @@ export function Navbar() {
     : "/";
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const accountRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!accountOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (accountRef.current && !accountRef.current.contains(e.target as Node)) setAccountOpen(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [accountOpen]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -81,12 +93,57 @@ export function Navbar() {
         </ul>
 
         <div className="hidden items-center gap-6 lg:flex">
-          <Link
-            href="/login"
-            className="text-ink/80 hover:text-forest text-[0.9rem] transition-colors"
-          >
-            Log in
-          </Link>
+          {signedIn ? (
+            <div ref={accountRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setAccountOpen((v) => !v)}
+                aria-expanded={accountOpen}
+                className="border-forest/20 text-ink hover:bg-forest/5 flex items-center gap-2 rounded-full border py-1.5 pr-4 pl-1.5 text-[0.88rem] transition-colors"
+              >
+                <span className="bg-forest text-cream flex size-7 items-center justify-center rounded-full text-[0.78rem] font-medium">
+                  {session!.user.name?.[0]?.toUpperCase() ?? <UserIcon className="size-3.5" />}
+                </span>
+                {session!.user.name?.split(" ")[0]}
+              </button>
+              <AnimatePresence>
+                {accountOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.16 }}
+                    className="border-line/60 bg-cream absolute top-full right-0 mt-2 w-52 overflow-hidden rounded-xl border shadow-lg"
+                  >
+                    <Link
+                      href={home}
+                      onClick={() => setAccountOpen(false)}
+                      className="text-ink hover:bg-forest/5 flex items-center gap-2.5 px-4 py-3 text-[0.88rem]"
+                    >
+                      <LayoutDashboard className="size-4" />
+                      {session!.user.role === "admin" ? "Admin dashboard" : "My dashboard"}
+                    </Link>
+                    <form action={logoutAction} className="border-line/50 border-t">
+                      <button
+                        type="submit"
+                        className="text-ink hover:bg-forest/5 flex w-full items-center gap-2.5 px-4 py-3 text-left text-[0.88rem]"
+                      >
+                        <LogOut className="size-4" />
+                        Sign out
+                      </button>
+                    </form>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              className="text-ink/80 hover:text-forest text-[0.9rem] transition-colors"
+            >
+              Log in
+            </Link>
+          )}
           <ButtonLink href="/courses" size="sm">
             Explore
             <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />
@@ -145,6 +202,17 @@ export function Navbar() {
                 {signedIn ? "Dashboard" : "Log in"}
               </ButtonLink>
             </div>
+            {signedIn && (
+              <form action={logoutAction} className="border-line/60 border-t px-5 pb-6 sm:px-8">
+                <button
+                  type="submit"
+                  className="text-muted hover:text-ink mt-4 flex items-center gap-2 text-[0.95rem]"
+                >
+                  <LogOut className="size-4" />
+                  Sign out
+                </button>
+              </form>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

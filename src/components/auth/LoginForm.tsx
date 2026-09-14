@@ -9,6 +9,7 @@ import type { FormEvent } from "react";
 
 import { Field } from "@/components/auth/Field";
 import { SocialButtons } from "@/components/auth/SocialButtons";
+import { safeNextPath } from "@/lib/safe-redirect";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -41,7 +42,8 @@ export function LoginForm() {
     }
 
     // The session cookie now exists; ask the server where this user belongs.
-    const target = params.get("next");
+    // Only same-site paths — an unchecked ?next= is an open redirect.
+    const target = safeNextPath(params.get("next"));
     const destination = await fetch("/api/me/home").then((r) => r.text());
     router.push(target || destination || "/");
     router.refresh();

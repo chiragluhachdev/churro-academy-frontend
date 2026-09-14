@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Caveat, Inter, Playfair_Display } from "next/font/google";
+import { auth } from "@/auth";
 import { SessionProvider } from "@/components/auth/SessionProvider";
 import { ChatWidget } from "@/components/chat/ChatWidget";
 import { ChromeGate } from "@/components/layout/ChromeGate";
@@ -62,14 +63,15 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const session = await auth();
   return (
     <html
       lang="en"
       className={`${playfair.variable} ${inter.variable} ${caveat.variable} h-full antialiased`}
     >
       <body className="bg-cream text-ink flex min-h-full flex-col overflow-x-hidden">
-        <SessionProvider>
+        <SessionProvider session={session}>
           <ChromeGate>
             <Navbar />
           </ChromeGate>

@@ -112,7 +112,7 @@ export default async function DashboardOverviewPage() {
             Nothing in progress
           </p>
           <p className="text-muted mx-auto mt-2 max-w-sm text-[0.9rem] leading-[1.7]">
-            Enrol in a course and it will appear here with your progress.
+            Enroll in a course and it will appear here with your progress.
           </p>
           <Link
             href={`/${user.username}/dashboard/explore`}

@@ -9,13 +9,24 @@ export type CourseCategory =
   | "Basics";
 
 export interface CurriculumLesson {
+  /** Stable id; progress is stored against it. */
+  id: string;
   title: string;
   /** Runtime in minutes. */
   duration: number;
   preview?: boolean;
+  /**
+   * Only present for free-preview lessons in public data, and for every lesson
+   * in the player once the course is owned.
+   */
+  videoUrl?: string;
+  /** True when a video exists, even if its link is withheld. */
+  hasVideo?: boolean;
+  description?: string;
 }
 
 export interface CurriculumModule {
+  id: string;
   title: string;
   lessons: CurriculumLesson[];
 }

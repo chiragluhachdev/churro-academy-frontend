@@ -6,7 +6,8 @@ import { ImageIcon, Loader2, Trash2, Upload, X } from "lucide-react";
 import { useRef, useState, useTransition } from "react";
 import type { ReactNode } from "react";
 
-import { uploadImageAction, type ActionResult } from "@/app/admin/actions";
+import type { ActionResult } from "@/app/admin/actions";
+import { uploadFile } from "@/components/admin/upload";
 import { cn } from "@/lib/format";
 
 export const inputClass =
@@ -29,6 +30,17 @@ export function Field({
       {children}
       {hint && <span className="text-muted block text-[0.75rem]">{hint}</span>}
     </label>
+  );
+}
+
+/** Like Field, but for multi-control groups — a <label> would forward clicks to the first button. */
+export function FieldGroup({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
+  return (
+    <div className="space-y-2">
+      <span className="text-ink block text-[0.85rem] font-medium">{label}</span>
+      {hint && <span className="text-muted -mt-1 block text-[0.75rem]">{hint}</span>}
+      {children}
+    </div>
   );
 }
 
@@ -90,13 +102,14 @@ export function ImageField({
     if (!file) return;
     setUploading(true);
     setError(null);
-    const formData = new FormData();
-    formData.append("file", file);
-    const result = await uploadImageAction(formData);
-    if (result.ok) onChange(result.data.url);
-    else setError(result.error);
-    setUploading(false);
-    if (inputRef.current) inputRef.current.value = "";
+    try {
+      onChange(await uploadFile(file, "image"));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload failed.");
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
   }
 
   return (

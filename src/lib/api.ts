@@ -1,4 +1,4 @@
-import type { Course } from "@/types/course";
+import type { Course, CurriculumModule } from "@/types/course";
 
 const API_URL = process.env.API_URL ?? "http://localhost:4000";
 
@@ -94,6 +94,9 @@ export interface Enrollment {
   id: string;
   course: Course;
   completedLessons: number;
+  completedLessonIds: string[];
+  lastLessonId: string;
+  purchasedAt?: string;
   progress: number;
   isComplete: boolean;
   lastOpenedAt: string;
@@ -107,13 +110,6 @@ export async function fetchMyEnrollments(token: string): Promise<Enrollment[]> {
   return enrollments;
 }
 
-export async function updateProgress(token: string, courseId: string, completedLessons: number) {
-  return api<{ ok: boolean; completedLessons: number }>(`/enrollments/${courseId}/progress`, {
-    method: "PATCH",
-    token,
-    body: { completedLessons },
-  });
-}
 
 export function studentStats(enrollments: Enrollment[]) {
   const lessonsDone = enrollments.reduce((sum, e) => sum + e.completedLessons, 0);
@@ -155,7 +151,7 @@ export interface AdminUser {
 
 export interface AdminEnrollment {
   id: string;
-  user: { name: string; username: string; email: string } | null;
+  user: { id: string; name: string; username: string; email: string } | null;
   course: { title: string; slug: string } | null;
   amountPaid: number;
   paymentStatus: string;
@@ -201,14 +197,19 @@ export interface CourseInput {
   thumbnail: string;
   heroImage: string;
   price: number;
-  discountPrice?: number;
+  /** `null` clears an existing sale. */
+  discountPrice: number | null;
   level: "Beginner" | "Intermediate" | "Advanced";
   duration: string;
-  lessons: number;
   category: string;
   featured: boolean;
   published: boolean;
   badge?: string;
+  curriculum: CurriculumModule[];
+  whatYouWillLearn: string[];
+  includedItems: string[];
+  requirements: string[];
+  faqs: { question: string; answer: string }[];
 }
 
 /* ---------------------------------------------------------- site content -- */
@@ -315,4 +316,86 @@ export function formatPostDate(iso: string): string {
     month: "short",
     year: "numeric",
   });
+}
+
+/* ---------------------------------------------------------------- checkout -- */
+
+export interface CheckoutOrder {
+  id: string;
+  status: "created" | "paid" | "failed" | "expired";
+  provider: "dummy" | "razorpay";
+  testMode: boolean;
+  amount: number;
+  listPrice: number;
+  discount: number;
+  currency: string;
+  expiresAt: string;
+  course: {
+    id: string;
+    slug: string;
+    title: string;
+    thumbnail: string;
+    level: string;
+    duration: string;
+    lessons: number;
+    includedItems: string[];
+  };
+  buyer: { name: string; email: string };
+}
+
+/* ------------------------------------------------------------------ player -- */
+
+export interface LearnProgress {
+  completedLessonIds: string[];
+  completedLessons: number;
+  totalLessons: number;
+  percent: number;
+  lastLessonId: string;
+  isComplete: boolean;
+}
+
+export async function fetchLearnCourse(token: string, slug: string) {
+  try {
+    return await api<{ course: Course; progress: LearnProgress; preview: boolean }>(`/learn/${slug}`, { token });
+  } catch (error) {
+    if (error instanceof ApiError && (error.status === 403 || error.status === 404)) return null;
+    throw error;
+  }
+}
+
+/* ---------------------------------------------------------- admin: student -- */
+
+export interface AdminStudentDetail {
+  user: { id: string; name: string; username: string; email: string; role: string; createdAt?: string };
+  summary: {
+    coursesOwned: number;
+    coursesCompleted: number;
+    lessonsCompleted: number;
+    totalSpent: number;
+    paidOrders: number;
+    lastActiveAt?: string;
+  };
+  enrollments: (Enrollment & {
+    sections: { title: string; lessons: { id: string; title: string; duration: number; done: boolean }[] }[];
+  })[];
+  orders: {
+    id: string;
+    courseTitle: string;
+    amount: number;
+    listPrice: number;
+    status: string;
+    provider: string;
+    providerPaymentId: string;
+    createdAt?: string;
+    paidAt?: string;
+  }[];
+}
+
+export async function fetchAdminStudent(token: string, id: string): Promise<AdminStudentDetail | null> {
+  try {
+    return await api<AdminStudentDetail>(`/admin/users/${id}`, { token });
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
 }

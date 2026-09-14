@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { AuthShell } from "@/components/auth/AuthShell";
 import { LoginForm } from "@/components/auth/LoginForm";
+import { safeNextPath } from "@/lib/safe-redirect";
 import { getSession } from "@/lib/session";
 
 export const metadata: Metadata = {
@@ -11,10 +12,16 @@ export const metadata: Metadata = {
   description: "Sign in to your Churro Academy account to continue learning.",
 };
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ next?: string }>;
+}) {
   const session = await getSession();
   if (session) {
-    redirect(session.user.role === "admin" ? "/admin" : `/${session.user.username}/dashboard`);
+    // Already signed in: carry on to where they were headed, else their home.
+    const next = safeNextPath((await searchParams)?.next);
+    redirect(next ?? (session.user.role === "admin" ? "/admin" : `/${session.user.username}/dashboard`));
   }
 
   return (

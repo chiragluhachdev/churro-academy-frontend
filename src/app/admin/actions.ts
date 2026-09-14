@@ -98,31 +98,21 @@ export async function saveChefAction(input: ChefInput) {
   );
 }
 
-/* ----------------------------------------------------------------- images -- */
+/* ---------------------------------------------------------------- uploads -- */
 
-/** Forwards an image to the backend's Cloudinary upload, server-side. */
-export async function uploadImageAction(formData: FormData): Promise<ActionResult<{ url: string }>> {
-  const { accessToken } = await requireAdmin();
-  const file = formData.get("file");
-  if (!(file instanceof File) || file.size === 0) return { ok: false, error: "Choose an image first." };
-  if (!file.type.startsWith("image/")) return { ok: false, error: "That file isn't an image." };
-  if (file.size > 8 * 1024 * 1024) return { ok: false, error: "Images must be under 8 MB." };
+export interface UploadTicket {
+  uploadUrl: string;
+  apiKey: string;
+  timestamp: number;
+  folder: string;
+  signature: string;
+}
 
-  const upstream = new FormData();
-  upstream.append("file", file);
-
-  try {
-    const response = await fetch(`${process.env.API_URL ?? "http://localhost:4000"}/api/upload`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${accessToken}` },
-      body: upstream,
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || !data.url) {
-      return { ok: false, error: data.error ?? "Upload failed — you can paste an image URL instead." };
-    }
-    return { ok: true, data: { url: data.url } };
-  } catch {
-    return { ok: false, error: "Upload failed — you can paste an image URL instead." };
-  }
+/**
+ * Signs a direct browser-to-Cloudinary upload. Files never pass through Next —
+ * server actions cap bodies at 1 MB, which rules out real photos, let alone
+ * lesson videos. The API secret stays on the backend.
+ */
+export async function getUploadTicketAction(kind: "image" | "video"): Promise<ActionResult<UploadTicket>> {
+  return run(null, (token) => api<UploadTicket>("/upload/signature", { method: "POST", token, body: { kind } }));
 }

@@ -14,12 +14,9 @@ import type { Course } from "@/types/course";
  */
 interface EnrollBarProps {
   course: Course;
-  owned: boolean;
-  signedIn: boolean;
-  dashboardHref: string;
 }
 
-export function EnrollBar({ course, owned, signedIn, dashboardHref }: EnrollBarProps) {
+export function EnrollBar({ course }: EnrollBarProps) {
   const [visible, setVisible] = useState(false);
   const price = course.discountPrice ?? course.price;
 
@@ -49,13 +46,7 @@ export function EnrollBar({ course, owned, signedIn, dashboardHref }: EnrollBarP
           )}
         </div>
         <div className="w-auto shrink-0">
-          <EnrollButton
-            courseId={course.id}
-            owned={owned}
-            signedIn={signedIn}
-            dashboardHref={dashboardHref}
-            className="w-auto px-6 py-3 text-[0.9rem]"
-          />
+          <EnrollButton className="w-auto px-6 py-3 text-[0.9rem]"/>
         </div>
       </div>
     </div>

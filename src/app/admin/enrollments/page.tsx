@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { adminApi } from "@/lib/api";
 import { requireSession } from "@/lib/session";
 import { Reveal } from "@/components/ui/Reveal";
@@ -42,9 +43,16 @@ export default async function AdminEnrollmentsPage() {
                           <UserIcon className="size-4 text-forest" />
                         </div>
                         <div>
-                          <p className="font-medium text-ink text-[0.95rem]">
-                            {enrollment.user?.name || "Unknown"}
-                          </p>
+                          {enrollment.user ? (
+                            <Link
+                              href={`/admin/users/${enrollment.user.id}`}
+                              className="font-medium text-ink text-[0.95rem] hover:text-forest hover:underline"
+                            >
+                              {enrollment.user.name}
+                            </Link>
+                          ) : (
+                            <p className="font-medium text-ink text-[0.95rem]">Unknown</p>
+                          )}
                           <p className="text-muted text-[0.75rem]">
                             {enrollment.user?.email || "—"}
                           </p>

@@ -20,7 +20,7 @@ export default async function CoursesPage() {
       <PageHeader
         eyebrow="Courses"
         title="Every course, one place."
-        lede="Ten programmes across cakes, fried sweets, French pastry and breads. Each one is structured, filmed close-up, and yours for life once you enrol."
+        lede="Ten programmes across cakes, fried sweets, French pastry and breads. Each one is structured, filmed close-up, and yours for life once you enroll."
       />
 
       <section className="bg-cream">

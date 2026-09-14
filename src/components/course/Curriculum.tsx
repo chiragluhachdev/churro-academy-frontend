@@ -46,7 +46,7 @@ export function Curriculum({ modules }: { modules: CurriculumModule[] }) {
             const moduleDuration = module.lessons.reduce((s, l) => s + l.duration, 0);
 
             return (
-              <div key={module.title}>
+              <div key={module.id}>
                 <button
                   type="button"
                   onClick={() => setOpenIndex(isOpen ? null : moduleIndex)}
@@ -80,7 +80,7 @@ export function Curriculum({ modules }: { modules: CurriculumModule[] }) {
                     <ul className="border-line/50 border-t">
                       {module.lessons.map((lesson) => (
                         <li
-                          key={lesson.title}
+                          key={lesson.id}
                           className="border-line/40 hover:bg-cream-warm/60 flex items-center gap-4 border-b px-6 py-3.5 last:border-b-0 transition-colors"
                         >
                           <PlayCircle

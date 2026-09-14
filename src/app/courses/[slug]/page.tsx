@@ -9,11 +9,13 @@ import { CourseReviews } from "@/components/course/CourseReviews";
 import { CourseFAQSection } from "@/components/course/CourseFAQ";
 import { EnrollCard } from "@/components/course/EnrollCard";
 import { EnrollBar } from "@/components/course/EnrollBar";
+import { CheckoutProvider, type Viewer } from "@/components/checkout/CheckoutProvider";
 import { fetchCourse, fetchCourses, fetchMyEnrollments } from "@/lib/api";
 import { getSession } from "@/lib/session";
 
 interface CoursePageProps {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ enroll?: string }>;
 }
 
 export async function generateStaticParams() {
@@ -37,20 +39,28 @@ export async function generateMetadata({ params }: CoursePageProps): Promise<Met
   };
 }
 
-export default async function CoursePage({ params }: CoursePageProps) {
+export default async function CoursePage({ params, searchParams }: CoursePageProps) {
   const { slug } = await params;
+  const query = (await searchParams) ?? {};
   const [course, session] = await Promise.all([fetchCourse(slug), getSession()]);
   if (!course) notFound();
 
-  // Ownership decides whether the CTA sells or opens the course.
-  const enrollments = session ? await fetchMyEnrollments(session.accessToken) : [];
+  const viewer: Viewer = !session ? "guest" : session.user.role === "admin" ? "admin" : "student";
+  // Admins never own courses; only a student's enrollments count.
+  const enrollments = viewer === "student" ? await fetchMyEnrollments(session!.accessToken) : [];
   const owned = enrollments.some((entry) => entry.course.slug === course.slug);
-  const dashboardHref = session
-    ? `/${session.user.username}/dashboard/courses`
-    : "/login";
+  const playerHref = session ? `/${session.user.username}/dashboard/courses/${course.slug}` : "/login";
+  const adminEditHref = `/admin/courses/${course.id}/edit`;
 
   return (
-    <>
+    <CheckoutProvider
+      courseId={course.id}
+      viewer={viewer}
+      owned={owned}
+      playerHref={playerHref}
+      adminEditHref={adminEditHref}
+      autoOpen={query.enroll === "1"}
+    >
       <div className="pt-28 pb-20 lg:pt-32">
         <div className="mx-auto max-w-[1400px] px-5 sm:px-8">
           <div className="lg:grid lg:grid-cols-[1fr_380px] lg:gap-12 xl:gap-16">
@@ -68,22 +78,12 @@ export default async function CoursePage({ params }: CoursePageProps) {
 
             {/* Right column — sticky enroll card (desktop only) */}
             <aside className="hidden lg:block" aria-label="Enrollment">
-              <EnrollCard
-                course={course}
-                owned={owned}
-                signedIn={Boolean(session)}
-                dashboardHref={dashboardHref}
-              />
+              <EnrollCard course={course} />
             </aside>
           </div>
         </div>
       </div>
-      <EnrollBar
-        course={course}
-        owned={owned}
-        signedIn={Boolean(session)}
-        dashboardHref={dashboardHref}
-      />
-    </>
+      <EnrollBar course={course} />
+    </CheckoutProvider>
   );
 }
