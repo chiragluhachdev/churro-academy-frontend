@@ -12,6 +12,7 @@ import { EnrollBar } from "@/components/course/EnrollBar";
 import { CheckoutProvider, type Viewer } from "@/components/checkout/CheckoutProvider";
 import { fetchCourse, fetchCourses } from "@/lib/api";
 import { getSession } from "@/lib/session";
+import { JsonLd, breadcrumbJsonLd, courseJsonLd, faqJsonLd } from "@/lib/seo";
 
 interface CoursePageProps {
   params: Promise<{ slug: string }>;
@@ -29,12 +30,21 @@ export async function generateMetadata({ params }: CoursePageProps): Promise<Met
   if (!course) return {};
 
   return {
-    title: course.title,
+    title: `${course.title} — Online Course`,
     description: course.shortDescription,
+    alternates: { canonical: `/courses/${course.slug}` },
     openGraph: {
       title: `${course.title} · Churro Academy`,
       description: course.shortDescription,
-      images: [{ url: course.heroImage, width: 1600, height: 900 }],
+      url: `/courses/${course.slug}`,
+      type: "website",
+      images: [{ url: course.heroImage, width: 1600, height: 900, alt: course.title }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${course.title} · Churro Academy`,
+      description: course.shortDescription,
+      images: [course.heroImage],
     },
   };
 }
@@ -50,6 +60,15 @@ export default async function CoursePage({ params, searchParams }: CoursePagePro
 
   return (
     <CheckoutProvider course={course} viewer={viewer} adminEditHref={adminEditHref} autoOpen={query.enroll === "1"}>
+      <JsonLd data={courseJsonLd(course)} />
+      <JsonLd data={faqJsonLd(course.faqs ?? [])} />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Courses", path: "/courses" },
+          { name: course.title, path: `/courses/${course.slug}` },
+        ])}
+      />
       <div className="pt-28 pb-20 lg:pt-32">
         <div className="mx-auto max-w-[1400px] px-5 sm:px-8">
           <div className="lg:grid lg:grid-cols-[1fr_380px] lg:gap-12 xl:gap-16">

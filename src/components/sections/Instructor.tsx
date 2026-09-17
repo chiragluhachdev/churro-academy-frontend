@@ -30,9 +30,11 @@ const socialIcons = {
 
 export async function Instructor() {
   const instructor = await fetchChef();
+  // Signature line under the portrait: "Chef Simone Kathuria" -> "Simone".
+  const signature = instructor.name.replace(/^chef\s+/i, "").split(/\s+/)[0];
 
   return (
-    <section className="bg-cream">
+    <section className="bg-cream" id="instructor">
       <div className="mx-auto max-w-[1400px] px-5 py-12 sm:px-8 sm:py-20 lg:py-24">
         <div className="grid items-center gap-14 lg:grid-cols-[32fr_42fr_26fr] lg:gap-12">
           <Reveal className="relative mx-auto w-full max-w-[22rem]">
@@ -79,7 +81,7 @@ export async function Instructor() {
             </h2>
             <p className="text-muted mt-6 max-w-lg leading-[1.8]">{instructor.bio}</p>
 
-            <p className="font-script text-forest mt-8 text-3xl">Valeria</p>
+            <p className="font-script text-forest mt-8 text-3xl">{signature}</p>
 
             <ul className="mt-7 flex items-center gap-3">
               {instructor.socials.map((social) => {

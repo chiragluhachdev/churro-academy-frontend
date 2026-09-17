@@ -11,9 +11,10 @@ import { ChefPortrait } from "@/components/chef/ChefPortrait";
 import { fetchChef } from "@/lib/api";
 
 export const metadata: Metadata = {
-  title: "About",
+  title: "About Us — Our Story & Teaching Philosophy",
   description:
-    "Churro Academy teaches the technique behind good baking — plainly, step by step, with lifetime access to every course.",
+    "How Churro Academy started, what it believes about teaching baking, and why every course is written and taught by one chef, Simone Kathuria.",
+  alternates: { canonical: "/about" },
 };
 
 const values: { icon: LucideIcon; title: string; body: string }[] = [

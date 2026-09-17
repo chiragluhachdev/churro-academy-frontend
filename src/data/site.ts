@@ -17,10 +17,9 @@ export const footerNav: { heading: string; links: NavLink[] }[] = [
     heading: "Explore",
     links: [
       { label: "All Courses", href: "/courses" },
-      { label: "Baking Basics", href: "/courses?category=basics" },
-      { label: "Desserts", href: "/courses?category=desserts" },
-      { label: "Bread & More", href: "/courses?category=breads" },
-      { label: "Gift Cards", href: "/gift-cards" },
+      { label: "Success Stories", href: "/success-stories" },
+      { label: "Blog", href: "/blog" },
+      { label: "Reviews", href: "/reviews" },
     ],
   },
   {
@@ -28,17 +27,13 @@ export const footerNav: { heading: string; links: NavLink[] }[] = [
     links: [
       { label: "About Us", href: "/about" },
       { label: "Meet the Chef", href: "/chef" },
-      { label: "Blog", href: "/blog" },
-      { label: "Careers", href: "/careers" },
       { label: "Contact Us", href: "/contact" },
+      { label: "FAQs", href: "/faqs" },
     ],
   },
   {
-    heading: "Support",
+    heading: "Legal",
     links: [
-      { label: "Reviews", href: "/reviews" },
-      { label: "Help Center", href: "/help" },
-      { label: "FAQs", href: "/faqs" },
       { label: "Privacy Policy", href: "/privacy" },
       { label: "Terms & Conditions", href: "/terms" },
       { label: "Refund Policy", href: "/refunds" },

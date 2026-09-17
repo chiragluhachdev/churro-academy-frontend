@@ -17,11 +17,13 @@ import { Reveal } from "@/components/ui/Reveal";
 import { ChefPortrait } from "@/components/chef/ChefPortrait";
 import { fetchChef } from "@/lib/api";
 import { fetchFeaturedCourses } from "@/lib/api";
+import { JsonLd, personJsonLd } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: "Meet Chef Simone Kathuria",
+  title: "Chef Simone Kathuria — Founder & Head Pastry Chef",
   description:
-    "Chef Simone founded Churro Academy and writes, tests and teaches every course on the platform.",
+    "Meet Chef Simone Kathuria, founder of Churro Academy. She writes, tests and teaches every online baking course on the platform herself.",
+  alternates: { canonical: "/chef" },
 };
 
 const statIcons: Record<string, LucideIcon> = {
@@ -45,6 +47,7 @@ export default async function ChefPage() {
 
   return (
     <>
+      <JsonLd data={personJsonLd(founder)} />
       <PageHeader
         eyebrow="Meet the Chef"
         title="Chef Simone Kathuria"

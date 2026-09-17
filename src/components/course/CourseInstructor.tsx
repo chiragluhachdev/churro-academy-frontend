@@ -32,7 +32,7 @@ export async function CourseInstructor() {
               {instructor.bio}
             </p>
             <Link
-              href="/#instructor"
+              href="/chef"
               className="group text-forest mt-4 inline-flex items-center gap-1.5 text-[0.85rem] font-medium"
             >
               Learn more about {instructor.name}

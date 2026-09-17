@@ -9,9 +9,10 @@ import { StarRating } from "@/components/ui/StarRating";
 import { fetchTestimonials } from "@/lib/api";
 
 export const metadata: Metadata = {
-  title: "Success Stories",
+  title: "Student Success Stories",
   description:
-    "Bakers who took a Churro Academy course and what changed for them afterwards.",
+    "Bakers who took a Churro Academy online baking course and what changed for them afterwards.",
+  alternates: { canonical: "/success-stories" },
 };
 
 export default async function SuccessStoriesPage() {

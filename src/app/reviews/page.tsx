@@ -6,11 +6,13 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Reveal } from "@/components/ui/Reveal";
 import { StarRating } from "@/components/ui/StarRating";
 import { fetchTestimonials } from "@/lib/api";
+import { JsonLd, reviewsJsonLd } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: "Reviews",
+  title: "Student Reviews",
   description:
     "Every review left by Churro Academy students, with the rating breakdown behind the average.",
+  alternates: { canonical: "/reviews" },
 };
 
 export default async function ReviewsPage() {
@@ -28,6 +30,7 @@ export default async function ReviewsPage() {
 
   return (
     <>
+      <JsonLd data={reviewsJsonLd(testimonials)} />
       <PageHeader
         eyebrow="Reviews"
         title="What students actually said."

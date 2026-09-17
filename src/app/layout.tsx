@@ -6,6 +6,8 @@ import { ChatWidget } from "@/components/chat/ChatWidget";
 import { ChromeGate } from "@/components/layout/ChromeGate";
 import { Footer } from "@/components/layout/Footer";
 import { Navbar } from "@/components/layout/Navbar";
+import { fetchChef } from "@/lib/api";
+import { JsonLd, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -27,24 +29,45 @@ const caveat = Caveat({
   display: "swap",
 });
 
+const TITLE = "Churro Academy — Online Baking Courses with Chef Simone Kathuria";
+const DESCRIPTION =
+  "Churro Academy (Churro Academy Global) turns your passion for desserts into real skills. Learn cakes, churros, French pastry and more from Chef Simone Kathuria through structured, step-by-step online baking courses with lifetime access.";
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.churroacademyglobal.com"),
   title: {
-    default: "Churro Academy — Master the Art of Baking, Your Way",
+    default: TITLE,
     template: "%s · Churro Academy",
   },
-  description:
-    "Churro Academy turns your passion for desserts into real skills. Learn from expert pastry chefs through structured, step-by-step online baking courses.",
+  description: DESCRIPTION,
+  applicationName: "Churro Academy",
+  keywords: [
+    "Churro Academy",
+    "Churro Academy Global",
+    "Chef Simone Kathuria",
+    "online baking courses",
+    "online baking classes",
+    "churro making course",
+    "learn churros",
+    "online dessert courses",
+  ],
+  alternates: { canonical: "/" },
+  robots: { index: true, follow: true },
+  // Set once a Search Console property exists — no tag renders until then.
+  verification: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+    ? { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION }
+    : undefined,
   icons: {
     icon: "/logo.png",
     apple: "/logo.png",
   },
   openGraph: {
-    title: "Churro Academy — Master the Art of Baking, Your Way",
-    description:
-      "Learn baking from expert chefs through structured, step-by-step online courses.",
+    title: TITLE,
+    description: DESCRIPTION,
     type: "website",
     siteName: "Churro Academy",
+    locale: "en_IN",
+    url: "/",
     images: [
       {
         url: "/logo.png",
@@ -56,21 +79,28 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary",
-    title: "Churro Academy — Master the Art of Baking, Your Way",
-    description:
-      "Learn baking from expert chefs through structured, step-by-step online courses.",
+    title: TITLE,
+    description: DESCRIPTION,
     images: ["/logo.png"],
   },
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const session = await auth();
+  const [session, chef] = await Promise.all([
+    auth(),
+    // sameAs on the sitewide Organization schema; never worth failing the
+    // whole page over if content service hiccups.
+    fetchChef().catch(() => undefined),
+  ]);
+
   return (
     <html
       lang="en"
       className={`${playfair.variable} ${inter.variable} ${caveat.variable} h-full antialiased`}
     >
       <body className="bg-cream text-ink flex min-h-full flex-col overflow-x-hidden">
+        <JsonLd data={organizationJsonLd(chef)} />
+        <JsonLd data={websiteJsonLd()} />
         <SessionProvider session={session}>
           <ChromeGate>
             <Navbar />

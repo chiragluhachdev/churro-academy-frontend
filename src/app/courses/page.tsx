@@ -4,11 +4,13 @@ import { CourseCard } from "@/components/course/CourseCard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Reveal } from "@/components/ui/Reveal";
 import { fetchCourses } from "@/lib/api";
+import { JsonLd, courseListJsonLd } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: "Courses",
+  title: "Online Baking Courses",
   description:
-    "Every Churro Academy course — cakes, churros, French pastry, breads and more, taught step by step with lifetime access.",
+    "Every Churro Academy online baking course — cakes, churros, French pastry, breads and more, taught step by step by Chef Simone Kathuria with lifetime access.",
+  alternates: { canonical: "/courses" },
 };
 
 export default async function CoursesPage() {
@@ -17,6 +19,7 @@ export default async function CoursesPage() {
 
   return (
     <>
+      <JsonLd data={courseListJsonLd(courses)} />
       <PageHeader
         eyebrow="Courses"
         title="Every course, one place."

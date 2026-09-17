@@ -8,6 +8,7 @@ import { PostCard } from "@/components/blog/PostCard";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { Reveal } from "@/components/ui/Reveal";
 import { fetchPost, fetchPosts, formatPostDate } from "@/lib/api";
+import { JsonLd, articleJsonLd, breadcrumbJsonLd } from "@/lib/seo";
 
 interface PostPageProps {
   params: Promise<{ slug: string }>;
@@ -20,7 +21,22 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
   return {
     title: post.title,
     description: post.excerpt,
-    openGraph: { title: post.title, description: post.excerpt, images: [{ url: post.cover }], type: "article" },
+    alternates: { canonical: `/blog/${post.slug}` },
+    openGraph: {
+      title: post.title,
+      description: post.excerpt,
+      url: `/blog/${post.slug}`,
+      type: "article",
+      publishedTime: post.publishedAt,
+      authors: [post.author],
+      images: [{ url: post.cover, width: 1600, height: 900, alt: post.title }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: post.title,
+      description: post.excerpt,
+      images: [post.cover],
+    },
   };
 }
 
@@ -38,6 +54,14 @@ export default async function PostPage({ params }: PostPageProps) {
 
   return (
     <>
+      <JsonLd data={articleJsonLd(post)} />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Blog", path: "/blog" },
+          { name: post.title, path: `/blog/${post.slug}` },
+        ])}
+      />
       <article className="bg-cream">
         <div className="mx-auto max-w-3xl px-5 pt-28 pb-12 sm:px-8 lg:pt-36">
           <Reveal>

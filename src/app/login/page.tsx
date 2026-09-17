@@ -9,6 +9,7 @@ import { getSession } from "@/lib/session";
 export const metadata: Metadata = {
   title: "Admin sign in",
   description: "Sign in to manage Churro Academy.",
+  robots: { index: false, follow: false },
 };
 
 export default async function LoginPage({

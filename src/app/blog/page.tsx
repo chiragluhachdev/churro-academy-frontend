@@ -10,9 +10,10 @@ import { Reveal } from "@/components/ui/Reveal";
 import { fetchPosts, formatPostDate } from "@/lib/api";
 
 export const metadata: Metadata = {
-  title: "Blog",
+  title: "Baking Tips & Technique Blog",
   description:
     "Technique notes, ingredient deep-dives and behind-the-scenes writing from the Churro Academy kitchen.",
+  alternates: { canonical: "/blog" },
 };
 
 export default async function BlogPage() {

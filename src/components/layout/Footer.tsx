@@ -5,14 +5,19 @@ import { Logo } from "@/components/brand/Logo";
 import { InstagramIcon, YoutubeIcon } from "@/components/brand/SocialIcons";
 import { NewsletterForm } from "@/components/layout/NewsletterForm";
 import { footerNav } from "@/data/site";
+import { fetchChef } from "@/lib/api";
 
-const socials = [
-  { label: "Instagram", href: "#", Icon: InstagramIcon },
-  { label: "YouTube", href: "#", Icon: YoutubeIcon },
-  { label: "Email", href: "mailto:hello@churroacademy.com", Icon: Mail },
-];
+export async function Footer() {
+  const chef = await fetchChef().catch(() => null);
+  const bySocial = (icon: "instagram" | "youtube") =>
+    chef?.socials.find((s) => s.icon === icon && /^https?:\/\//.test(s.href))?.href;
 
-export function Footer() {
+  const socials = [
+    { label: "Instagram", href: bySocial("instagram"), Icon: InstagramIcon },
+    { label: "YouTube", href: bySocial("youtube"), Icon: YoutubeIcon },
+    { label: "Email", href: "mailto:hello@churroacademy.com", Icon: Mail },
+  ].filter((s): s is { label: string; href: string; Icon: typeof Mail } => Boolean(s.href));
+
   return (
     <footer className="bg-forest-dark text-cream">
       <div className="mx-auto max-w-[1400px] px-5 py-10 sm:px-8 sm:py-14 lg:py-20">
@@ -29,6 +34,8 @@ export function Footer() {
                 <li key={label}>
                   <Link
                     href={href}
+                    target={href.startsWith("http") ? "_blank" : undefined}
+                    rel={href.startsWith("http") ? "noreferrer" : undefined}
                     aria-label={label}
                     className="border-cream/20 text-cream hover:bg-cream hover:text-forest-dark flex size-9 items-center justify-center rounded-full border transition-colors duration-300"
                   >
