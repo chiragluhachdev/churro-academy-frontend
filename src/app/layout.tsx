@@ -7,7 +7,7 @@ import { ChromeGate } from "@/components/layout/ChromeGate";
 import { Footer } from "@/components/layout/Footer";
 import { Navbar } from "@/components/layout/Navbar";
 import { fetchChef } from "@/lib/api";
-import { JsonLd, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
+import { JsonLd, SITE_URL, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -57,9 +57,20 @@ export const metadata: Metadata = {
   verification: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
     ? { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION }
     : undefined,
+  // Absolute URLs, plain filenames under /public (never Next's hashed
+  // app/icon.* route) — so the address Google indexes today is the address
+  // it still finds on every future deploy. logo.png is the square CA
+  // monogram; favicon.ico/apple-touch-icon.png/icon-*.png are generated
+  // from it (see the favicon.ico's own multi-size frames for legacy UAs).
   icons: {
-    icon: "/logo.png",
-    apple: "/logo.png",
+    icon: [
+      { url: `${SITE_URL}/favicon.ico`, sizes: "any" },
+      { url: `${SITE_URL}/icon-32.png`, sizes: "32x32", type: "image/png" },
+      { url: `${SITE_URL}/icon-192.png`, sizes: "192x192", type: "image/png" },
+      { url: `${SITE_URL}/icon-512.png`, sizes: "512x512", type: "image/png" },
+    ],
+    shortcut: [{ url: `${SITE_URL}/favicon.ico` }],
+    apple: [{ url: `${SITE_URL}/apple-touch-icon.png`, sizes: "180x180", type: "image/png" }],
   },
   openGraph: {
     title: TITLE,
