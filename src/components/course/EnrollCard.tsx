@@ -46,11 +46,13 @@ export function EnrollCard({ course }: EnrollCardProps) {
 
         {/* Course meta */}
         <ul className="border-line/70 divide-line/70 mx-7 divide-y border-t text-[0.85rem]">
-          <li className="flex items-center gap-3 py-3.5">
-            <PlayCircle className="text-forest size-[1.1rem]" strokeWidth={1.5} aria-hidden="true" />
-            <span className="text-muted flex-1">Lessons</span>
-            <span className="text-ink font-medium">{course.lessons}</span>
-          </li>
+          {course.lessons > 0 && (
+            <li className="flex items-center gap-3 py-3.5">
+              <PlayCircle className="text-forest size-[1.1rem]" strokeWidth={1.5} aria-hidden="true" />
+              <span className="text-muted flex-1">Lessons</span>
+              <span className="text-ink font-medium">{course.lessons}</span>
+            </li>
+          )}
           <li className="flex items-center gap-3 py-3.5">
             <Clock className="text-forest size-[1.1rem]" strokeWidth={1.5} aria-hidden="true" />
             <span className="text-muted flex-1">Duration</span>

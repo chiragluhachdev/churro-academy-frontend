@@ -71,10 +71,12 @@ export function CourseHero({ course }: { course: Course }) {
             <span className="text-ink ml-1 font-semibold">{course.rating}</span>
             <span>({formatCount(course.reviewCount)} reviews)</span>
           </span>
-          <span className="text-muted inline-flex items-center gap-1.5">
-            <PlayCircle className="size-4" strokeWidth={1.5} aria-hidden="true" />
-            {course.lessons} lessons
-          </span>
+          {course.lessons > 0 && (
+            <span className="text-muted inline-flex items-center gap-1.5">
+              <PlayCircle className="size-4" strokeWidth={1.5} aria-hidden="true" />
+              {course.lessons} lessons
+            </span>
+          )}
           <span className="text-muted inline-flex items-center gap-1.5">
             <Clock className="size-4" strokeWidth={1.5} aria-hidden="true" />
             {course.duration}

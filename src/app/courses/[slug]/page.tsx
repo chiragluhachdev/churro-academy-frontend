@@ -76,7 +76,7 @@ export default async function CoursePage({ params, searchParams }: CoursePagePro
             <div className="space-y-14">
               <CourseHero course={course} />
               <WhatYouWillLearn items={course.whatYouWillLearn} />
-              <Curriculum modules={course.curriculum} />
+              {course.curriculum.length > 0 && <Curriculum modules={course.curriculum} />}
               <CourseInstructor />
               <CourseReviews courseTitle={course.title} />
               {course.faqs && course.faqs.length > 0 && (

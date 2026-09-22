@@ -5,11 +5,9 @@ import { useState, useTransition } from "react";
 import type { FormEvent } from "react";
 
 import { saveCourseAction } from "@/app/admin/actions";
-import { CurriculumEditor } from "@/components/admin/CurriculumEditor";
 import { Card, Field, FieldGroup, FormActions, ImageField, Toggle, inputClass } from "@/components/admin/fields";
 import { FaqEditor, StringListEditor } from "@/components/admin/ListEditor";
 import type { AdminCourse, CourseInput } from "@/lib/api";
-import type { CurriculumModule } from "@/types/course";
 
 const LEVELS = ["Beginner", "Intermediate", "Advanced"] as const;
 
@@ -46,9 +44,6 @@ export function CourseForm({ initialData }: { initialData?: AdminCourse }) {
     driveLink: initialData?.driveLink ?? "",
     drivePassword: initialData?.drivePassword ?? "",
   });
-  const [curriculum, setCurriculum] = useState<CurriculumModule[]>(
-    () => initialData?.curriculum ?? [],
-  );
   const [whatYouWillLearn, setWhatYouWillLearn] = useState<string[]>(
     () => initialData?.whatYouWillLearn ?? [],
   );
@@ -78,22 +73,6 @@ export function CourseForm({ initialData }: { initialData?: AdminCourse }) {
       return;
     }
 
-    for (const [si, section] of curriculum.entries()) {
-      if (!section.title.trim()) {
-        setError(`Section ${si + 1} needs a title.`);
-        return;
-      }
-      const untitled = section.lessons.findIndex((l) => !l.title.trim());
-      if (untitled !== -1) {
-        setError(`Lesson ${si + 1}.${untitled + 1} needs a title.`);
-        return;
-      }
-    }
-    const lessonCount = curriculum.reduce((n, s) => n + s.lessons.length, 0);
-    if (form.published && lessonCount === 0) {
-      setError("Add at least one lesson before publishing — or turn Published off to save a draft.");
-      return;
-    }
     if (form.driveLink.trim() && !/^https?:\/\//i.test(form.driveLink.trim())) {
       setError("The Drive link must start with https://.");
       return;
@@ -107,15 +86,6 @@ export function CourseForm({ initialData }: { initialData?: AdminCourse }) {
       badge: form.badge.trim(),
       driveLink: form.driveLink.trim(),
       drivePassword: form.drivePassword.trim(),
-      curriculum: curriculum.map((section) => ({
-        ...section,
-        title: section.title.trim(),
-        lessons: section.lessons.map((lesson) => ({
-          id: lesson.id,
-          title: lesson.title.trim(),
-          duration: Number(lesson.duration) || 0,
-        })),
-      })),
       whatYouWillLearn: clean(whatYouWillLearn),
       includedItems: clean(includedItems),
       requirements: clean(requirements),
@@ -228,18 +198,6 @@ export function CourseForm({ initialData }: { initialData?: AdminCourse }) {
             />
           </Field>
         </div>
-      </Card>
-
-      <Card title="Curriculum">
-        <p className="text-muted -mt-2 text-[0.85rem]">
-          Group lessons into sections — this is the syllabus shown on the course page, and the lesson count
-          on the site comes from here.
-        </p>
-        <CurriculumEditor
-          value={curriculum}
-          onChange={setCurriculum}
-          onUseDuration={(label) => set("duration", label)}
-        />
       </Card>
 
       <Card title="Course delivery">

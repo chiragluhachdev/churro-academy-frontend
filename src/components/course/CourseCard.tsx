@@ -36,10 +36,12 @@ export function CourseCard({ course }: { course: Course }) {
           </p>
 
           <div className="text-muted border-line/70 mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t pt-3 text-[0.72rem] sm:mt-5 sm:gap-x-5 sm:pt-4 sm:text-[0.78rem]">
-            <span className="inline-flex items-center gap-1.5">
-              <PlayCircle className="size-3.5" strokeWidth={1.6} aria-hidden="true" />
-              {course.lessons} Lessons
-            </span>
+            {course.lessons > 0 && (
+              <span className="inline-flex items-center gap-1.5">
+                <PlayCircle className="size-3.5" strokeWidth={1.6} aria-hidden="true" />
+                {course.lessons} Lessons
+              </span>
+            )}
             <span className="inline-flex items-center gap-1.5">
               <BarChart3 className="size-3.5" strokeWidth={1.6} aria-hidden="true" />
               {course.level}

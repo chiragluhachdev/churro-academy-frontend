@@ -212,7 +212,7 @@ export interface CourseInput {
   featured: boolean;
   published: boolean;
   badge?: string;
-  curriculum: CurriculumModule[];
+  curriculum?: CurriculumModule[];
   whatYouWillLearn: string[];
   includedItems: string[];
   requirements: string[];
