@@ -151,8 +151,8 @@ export interface AdminOrderDetail {
   seller: { companyName: string; gstin: string; address: string; email: string; phone: string };
   emailSentAt?: string;
   emailError: string;
-  /** What the enrollment email lists — which lessons have a video link set. */
-  emailSections: { title: string; lessons: { title: string; hasVideo: boolean }[] }[];
+  /** What a resend would actually go out with. */
+  courseDelivery: { driveLink: string; hasPassword: boolean };
 }
 
 export const adminApi = {
@@ -217,6 +217,9 @@ export interface CourseInput {
   includedItems: string[];
   requirements: string[];
   faqs: { question: string; answer: string }[];
+  /** Where the recordings live — one Drive link/password per course, emailed to a buyer once paid. */
+  driveLink: string;
+  drivePassword: string;
 }
 
 /* ---------------------------------------------------------- site content -- */

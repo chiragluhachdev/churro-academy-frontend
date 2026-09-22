@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AlertCircle, ArrowLeft, CheckCircle2, Circle, Mail } from "lucide-react";
+import { AlertCircle, ArrowLeft, CheckCircle2, ExternalLink, Mail } from "lucide-react";
 
 import { adminApi } from "@/lib/api";
 import { requireSession } from "@/lib/session";
@@ -22,9 +22,6 @@ export default async function AdminInvoicePage({ params }: { params: Promise<{ i
   } catch {
     notFound();
   }
-
-  const totalLessons = order.emailSections.reduce((n, s) => n + s.lessons.length, 0);
-  const withVideo = order.emailSections.reduce((n, s) => n + s.lessons.filter((l) => l.hasVideo).length, 0);
 
   return (
     <div className="space-y-6">
@@ -83,29 +80,35 @@ export default async function AdminInvoicePage({ params }: { params: Promise<{ i
                     Last attempt failed: {order.emailError}
                   </p>
                 )}
-                <p className="text-muted mt-2 text-[0.78rem]">
-                  {withVideo}/{totalLessons} lessons have a video link right now — resending after adding more
-                  picks up the change.
+                <p className="text-muted mt-2 flex items-center gap-1.5 text-[0.78rem]">
+                  {order.courseDelivery.driveLink ? (
+                    <>
+                      <CheckCircle2 className="text-forest size-3.5 shrink-0" />
+                      Course has a Drive link
+                      {order.courseDelivery.hasPassword && " and password"} set — resending after changing it
+                      picks up the update.
+                    </>
+                  ) : (
+                    <>
+                      <AlertCircle className="size-3.5 shrink-0 text-red-500" />
+                      No Drive link set on this course yet — the buyer got a &ldquo;coming soon&rdquo; note instead.
+                    </>
+                  )}
                 </p>
               </div>
               <ResendEmailButton orderId={order.id} label={order.emailSentAt ? "Resend email" : "Send email"} />
             </div>
 
-            {order.emailSections.length > 0 && (
-              <ul className="border-line/60 mt-5 space-y-1 border-t pt-4">
-                {order.emailSections.flatMap((section) =>
-                  section.lessons.map((lesson) => (
-                    <li key={`${section.title}-${lesson.title}`} className="flex items-center gap-2 text-[0.82rem]">
-                      {lesson.hasVideo ? (
-                        <CheckCircle2 className="text-forest size-3.5 shrink-0" />
-                      ) : (
-                        <Circle className="text-line size-3.5 shrink-0" />
-                      )}
-                      <span className={lesson.hasVideo ? "text-ink" : "text-muted"}>{lesson.title}</span>
-                    </li>
-                  )),
-                )}
-              </ul>
+            {order.courseDelivery.driveLink && (
+              <a
+                href={order.courseDelivery.driveLink}
+                target="_blank"
+                rel="noreferrer"
+                className="text-forest border-line/60 mt-5 flex items-center gap-1.5 border-t pt-4 text-[0.82rem] font-medium"
+              >
+                {order.courseDelivery.driveLink}
+                <ExternalLink className="size-3.5 shrink-0" />
+              </a>
             )}
           </div>
         </Reveal>

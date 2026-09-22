@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Link2 as Link2Icon } from "lucide-react";
 import { useState, useTransition } from "react";
 import type { FormEvent } from "react";
 
@@ -44,6 +43,8 @@ export function CourseForm({ initialData }: { initialData?: AdminCourse }) {
     badge: initialData?.badge ?? "",
     featured: initialData?.featured ?? false,
     published: initialData?.published ?? true,
+    driveLink: initialData?.driveLink ?? "",
+    drivePassword: initialData?.drivePassword ?? "",
   });
   const [curriculum, setCurriculum] = useState<CurriculumModule[]>(
     () => initialData?.curriculum ?? [],
@@ -87,15 +88,14 @@ export function CourseForm({ initialData }: { initialData?: AdminCourse }) {
         setError(`Lesson ${si + 1}.${untitled + 1} needs a title.`);
         return;
       }
-      const badLink = section.lessons.findIndex((l) => l.videoUrl?.trim() && !/^https?:\/\//i.test(l.videoUrl.trim()));
-      if (badLink !== -1) {
-        setError(`Lesson ${si + 1}.${badLink + 1}: the video link must start with https://.`);
-        return;
-      }
     }
     const lessonCount = curriculum.reduce((n, s) => n + s.lessons.length, 0);
     if (form.published && lessonCount === 0) {
       setError("Add at least one lesson before publishing — or turn Published off to save a draft.");
+      return;
+    }
+    if (form.driveLink.trim() && !/^https?:\/\//i.test(form.driveLink.trim())) {
+      setError("The Drive link must start with https://.");
       return;
     }
 
@@ -105,6 +105,8 @@ export function CourseForm({ initialData }: { initialData?: AdminCourse }) {
       price,
       discountPrice: discount,
       badge: form.badge.trim(),
+      driveLink: form.driveLink.trim(),
+      drivePassword: form.drivePassword.trim(),
       curriculum: curriculum.map((section) => ({
         ...section,
         title: section.title.trim(),
@@ -112,7 +114,6 @@ export function CourseForm({ initialData }: { initialData?: AdminCourse }) {
           id: lesson.id,
           title: lesson.title.trim(),
           duration: Number(lesson.duration) || 0,
-          videoUrl: (lesson.videoUrl ?? "").trim(),
         })),
       })),
       whatYouWillLearn: clean(whatYouWillLearn),
@@ -232,16 +233,38 @@ export function CourseForm({ initialData }: { initialData?: AdminCourse }) {
       <Card title="Curriculum">
         <p className="text-muted -mt-2 text-[0.85rem]">
           Group lessons into sections — this is the syllabus shown on the course page, and the lesson count
-          on the site comes from here. Add a video link (YouTube, Drive, Vimeo…) on any lesson using the{" "}
-          <Link2Icon className="mx-0.5 inline size-3" strokeWidth={2} aria-hidden="true" /> icon — the site
-          never shows it, but as soon as someone pays it&rsquo;s emailed to them automatically, and sent on
-          WhatsApp as a backup.
+          on the site comes from here.
         </p>
         <CurriculumEditor
           value={curriculum}
           onChange={setCurriculum}
           onUseDuration={(label) => set("duration", label)}
         />
+      </Card>
+
+      <Card title="Course delivery">
+        <p className="text-muted -mt-2 text-[0.85rem]">
+          Where the actual recordings live. The site never shows this — as soon as someone pays, it&rsquo;s
+          emailed to them automatically (and included on the resend if you add or change it later).
+        </p>
+        <div className="grid gap-6 md:grid-cols-2">
+          <Field label="Google Drive link">
+            <input
+              type="url"
+              value={form.driveLink}
+              onChange={(e) => set("driveLink", e.target.value)}
+              placeholder="https://drive.google.com/drive/folders/…"
+              className={inputClass}
+            />
+          </Field>
+          <Field label="Folder password" hint="Optional — leave blank if the link needs no password.">
+            <input
+              value={form.drivePassword}
+              onChange={(e) => set("drivePassword", e.target.value)}
+              className={inputClass}
+            />
+          </Field>
+        </div>
       </Card>
 
       <Card title="Course page content">

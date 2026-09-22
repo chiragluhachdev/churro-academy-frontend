@@ -1,7 +1,6 @@
 "use client";
 
-import { ArrowDown, ArrowUp, Link2, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 
 import { inputClass } from "@/components/admin/fields";
 import { cn, formatMinutes } from "@/lib/format";
@@ -10,7 +9,7 @@ import type { CurriculumLesson, CurriculumModule } from "@/types/course";
 const newId = () => crypto.randomUUID();
 
 export function emptyLesson(): CurriculumLesson {
-  return { id: newId(), title: "", duration: 0, videoUrl: "" };
+  return { id: newId(), title: "", duration: 0 };
 }
 
 function move<T>(list: T[], from: number, to: number): T[] {
@@ -23,9 +22,10 @@ function move<T>(list: T[], from: number, to: number): T[] {
 
 /**
  * The syllabus shown on the course page — sections and lesson titles with a
- * duration each. There's no in-app player, so titles/durations are marketing
- * copy; the video link on each lesson is different — it's admin-only, and
- * only ever leaves the server in the enrollment email once someone's paid.
+ * duration each. There's no in-app player, so this is marketing copy, not
+ * something progress is tracked against; ids just keep reordering painless.
+ * The actual recordings live in one Drive link per course, set under
+ * "Course delivery" below — not here, per lesson.
  */
 export function CurriculumEditor({
   value,
@@ -36,10 +36,8 @@ export function CurriculumEditor({
   onChange: (next: CurriculumModule[]) => void;
   onUseDuration: (label: string) => void;
 }) {
-  const [openLesson, setOpenLesson] = useState<string | null>(null);
   const totalLessons = value.reduce((n, s) => n + s.lessons.length, 0);
   const totalMinutes = value.reduce((n, s) => n + s.lessons.reduce((m, l) => m + (Number(l.duration) || 0), 0), 0);
-  const withVideo = value.reduce((n, s) => n + s.lessons.filter((l) => l.videoUrl).length, 0);
 
   const setSection = (i: number, patch: Partial<CurriculumModule>) =>
     onChange(value.map((s, idx) => (idx === i ? { ...s, ...patch } : s)));
@@ -51,9 +49,6 @@ export function CurriculumEditor({
       <div className="bg-cream flex flex-wrap items-center gap-x-5 gap-y-2 rounded-xl px-4 py-3 text-[0.82rem]">
         <span className="text-ink font-medium">{value.length} sections</span>
         <span className="text-ink font-medium">{totalLessons} lessons</span>
-        <span className="text-muted">
-          {withVideo}/{totalLessons} have a video link
-        </span>
         <span className="text-muted">{formatMinutes(totalMinutes) || "0m"} total</span>
         {totalMinutes > 0 && (
           <button type="button" onClick={() => onUseDuration(formatMinutes(totalMinutes))} className="text-forest ml-auto font-medium hover:underline">
@@ -89,63 +84,30 @@ export function CurriculumEditor({
           </div>
 
           <ul className="divide-line/40 divide-y">
-            {section.lessons.map((lesson, li) => {
-              const expanded = openLesson === lesson.id;
-              return (
-                <li key={lesson.id}>
-                  <div className="flex items-center gap-2 px-4 py-2.5">
-                    <span className="text-muted w-9 shrink-0 text-[0.78rem]">{si + 1}.{li + 1}</span>
-                    <input
-                      value={lesson.title}
-                      onChange={(e) => setLesson(si, li, { title: e.target.value })}
-                      placeholder="Lesson title"
-                      aria-label={`Lesson ${si + 1}.${li + 1} title`}
-                      className="text-ink placeholder:text-muted/60 min-w-0 flex-1 bg-transparent py-1 text-[0.9rem] outline-none"
-                    />
-                    <input
-                      type="number"
-                      min={0}
-                      value={lesson.duration || ""}
-                      onChange={(e) => setLesson(si, li, { duration: Number(e.target.value) })}
-                      placeholder="min"
-                      aria-label={`Lesson ${si + 1}.${li + 1} duration in minutes`}
-                      className={`${inputClass} w-20 shrink-0 py-1.5 text-center text-[0.82rem]`}
-                    />
-                    <IconButton
-                      label={expanded ? "Hide video link" : lesson.videoUrl ? "Edit video link" : "Add video link"}
-                      onClick={() => setOpenLesson(expanded ? null : lesson.id)}
-                    >
-                      <span className="relative inline-flex">
-                        <Link2 className={cn("size-4", lesson.videoUrl ? "text-forest" : "")} />
-                        {lesson.videoUrl && <span className="bg-forest absolute -top-0.5 -right-0.5 size-1.5 rounded-full" />}
-                      </span>
-                    </IconButton>
-                    <IconButton label="Move lesson up" onClick={() => setSection(si, { lessons: move(section.lessons, li, li - 1) })} disabled={li === 0}><ArrowUp className="size-3.5" /></IconButton>
-                    <IconButton label="Move lesson down" onClick={() => setSection(si, { lessons: move(section.lessons, li, li + 1) })} disabled={li === section.lessons.length - 1}><ArrowDown className="size-3.5" /></IconButton>
-                    <IconButton label="Delete lesson" danger onClick={() => setSection(si, { lessons: section.lessons.filter((_, idx) => idx !== li) })}><Trash2 className="size-3.5" /></IconButton>
-                  </div>
-
-                  {expanded && (
-                    <div className="bg-cream-warm/60 space-y-1.5 px-4 pt-1 pb-4 sm:pl-15">
-                      <label className="text-ink flex items-center gap-1.5 text-[0.78rem] font-medium">
-                        <Link2 className="size-3.5" />
-                        Video link
-                      </label>
-                      <input
-                        type="url"
-                        value={lesson.videoUrl ?? ""}
-                        onChange={(e) => setLesson(si, li, { videoUrl: e.target.value })}
-                        placeholder="https://drive.google.com/... or a YouTube/Vimeo link"
-                        className={`${inputClass} text-[0.85rem]`}
-                      />
-                      <p className="text-muted text-[0.72rem]">
-                        Not shown on the site — emailed to a buyer automatically once they pay for this course.
-                      </p>
-                    </div>
-                  )}
-                </li>
-              );
-            })}
+            {section.lessons.map((lesson, li) => (
+              <li key={lesson.id} className="flex items-center gap-2 px-4 py-2.5">
+                <span className="text-muted w-9 shrink-0 text-[0.78rem]">{si + 1}.{li + 1}</span>
+                <input
+                  value={lesson.title}
+                  onChange={(e) => setLesson(si, li, { title: e.target.value })}
+                  placeholder="Lesson title"
+                  aria-label={`Lesson ${si + 1}.${li + 1} title`}
+                  className="text-ink placeholder:text-muted/60 min-w-0 flex-1 bg-transparent py-1 text-[0.9rem] outline-none"
+                />
+                <input
+                  type="number"
+                  min={0}
+                  value={lesson.duration || ""}
+                  onChange={(e) => setLesson(si, li, { duration: Number(e.target.value) })}
+                  placeholder="min"
+                  aria-label={`Lesson ${si + 1}.${li + 1} duration in minutes`}
+                  className={`${inputClass} w-20 shrink-0 py-1.5 text-center text-[0.82rem]`}
+                />
+                <IconButton label="Move lesson up" onClick={() => setSection(si, { lessons: move(section.lessons, li, li - 1) })} disabled={li === 0}><ArrowUp className="size-3.5" /></IconButton>
+                <IconButton label="Move lesson down" onClick={() => setSection(si, { lessons: move(section.lessons, li, li + 1) })} disabled={li === section.lessons.length - 1}><ArrowDown className="size-3.5" /></IconButton>
+                <IconButton label="Delete lesson" danger onClick={() => setSection(si, { lessons: section.lessons.filter((_, idx) => idx !== li) })}><Trash2 className="size-3.5" /></IconButton>
+              </li>
+            ))}
           </ul>
 
           <button

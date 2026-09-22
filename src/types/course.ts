@@ -14,12 +14,6 @@ export interface CurriculumLesson {
   title: string;
   /** Runtime in minutes — shown in the syllabus on the course page. */
   duration: number;
-  /**
-   * Where the recording lives (YouTube, Drive, Vimeo…). Admin-only — the
-   * public course page never sees this; it's what the enrollment email
-   * sends a buyer once they've paid.
-   */
-  videoUrl?: string;
 }
 
 export interface CurriculumModule {
@@ -75,4 +69,11 @@ export interface Course {
   requirements?: string[];
   /** Course-specific FAQs — shown as an accordion on the detail page. */
   faqs?: CourseFAQ[];
+  /**
+   * Where the recordings actually live — one Drive link (and its password,
+   * if any) per course. Admin-only: the public course page never sees these;
+   * they're what the enrollment email sends a buyer once they've paid.
+   */
+  driveLink?: string;
+  drivePassword?: string;
 }
