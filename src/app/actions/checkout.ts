@@ -27,13 +27,22 @@ export async function startCheckoutAction(courseId: string, buyer: BuyerDetails)
   }
 }
 
-export async function confirmPaymentAction(orderId: string): Promise<Result<{ orderId: string }>> {
+export interface RazorpayPaymentResult {
+  razorpay_payment_id: string;
+  razorpay_order_id: string;
+  razorpay_signature: string;
+}
+
+export async function confirmPaymentAction(
+  orderId: string,
+  razorpay?: RazorpayPaymentResult,
+): Promise<Result<{ orderId: string }>> {
   try {
     const { orderId: id } = await api<{ ok: boolean; orderId: string }>(`/orders/${orderId}/confirm`, {
       method: "POST",
-      // The dummy provider needs nothing. Razorpay will pass its payment id
-      // and signature here, which the backend verifies.
-      body: {},
+      // The dummy provider needs nothing. Razorpay's checkout widget hands
+      // back a payment id, order id and signature, which the backend verifies.
+      body: razorpay ?? {},
     });
     return { ok: true, data: { orderId: id } };
   } catch (error) {

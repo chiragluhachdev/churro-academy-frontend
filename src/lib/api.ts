@@ -363,6 +363,10 @@ export interface CheckoutOrder {
   paidAt?: string;
   invoiceNumber: string;
   gst: GstBreakdown;
+  /** Razorpay's own order id — needed to open its checkout widget. Empty in test mode. */
+  providerOrderId: string;
+  /** Razorpay's publishable key_id — safe client-side. Empty in test mode. */
+  razorpayKeyId: string;
   course: {
     id: string;
     slug: string;

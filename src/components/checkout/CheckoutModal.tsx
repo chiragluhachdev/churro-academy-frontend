@@ -22,9 +22,10 @@ import {
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 
-import { confirmPaymentAction, startCheckoutAction } from "@/app/actions/checkout";
+import { confirmPaymentAction, startCheckoutAction, type RazorpayPaymentResult } from "@/app/actions/checkout";
 import type { CheckoutOrder } from "@/lib/api";
 import { cn, formatPrice, formatPricePrecise } from "@/lib/format";
+import { openRazorpayCheckout } from "@/lib/razorpay";
 import type { Course } from "@/types/course";
 
 type Stage = "details" | "review" | "paying" | "success" | "error";
@@ -124,17 +125,60 @@ function CheckoutDialog({
     }
   }
 
+  async function finishPayment(orderId: string, razorpay?: RazorpayPaymentResult) {
+    const result = await confirmPaymentAction(orderId, razorpay);
+    // Set before the stage flip: a still-open Razorpay widget's `ondismiss`
+    // checks this flag, and must see "no longer mid-payment" the instant it fires.
+    paying.current = false;
+    if (result.ok) {
+      setStage("success");
+    } else {
+      setError(result.error);
+      setStage("review");
+    }
+  }
+
   async function pay() {
     if (!order || paying.current || !agreed) return;
     paying.current = true;
     setStage("paying");
     setError(null);
-    const result = await confirmPaymentAction(order.id);
-    if (result.ok) {
-      setStage("success");
-    } else {
+
+    if (order.testMode) {
+      void finishPayment(order.id);
+      return;
+    }
+
+    // Live Razorpay: open its widget. Everything past this point happens in
+    // its own callbacks — card/UPI details are entered there, never here.
+    try {
+      await openRazorpayCheckout(
+        {
+          key: order.razorpayKeyId,
+          amount: Math.round(order.amount * 100),
+          currency: order.currency,
+          name: order.seller.companyName,
+          description: order.course.title,
+          order_id: order.providerOrderId,
+          prefill: { name: order.buyer.name, email: order.buyer.email, contact: order.buyer.phone },
+          theme: { color: "#294B32" },
+          handler: (response) => void finishPayment(order.id, response),
+          modal: {
+            // Fires on a user-closed widget — success already moved on and
+            // cleared `paying.current` by the time this could ever see it true.
+            ondismiss: () => {
+              if (paying.current) {
+                paying.current = false;
+                setStage("review");
+              }
+            },
+          },
+        },
+        (failure) => setError(failure.error?.description || "Payment failed. You can try again."),
+      );
+    } catch (err) {
       paying.current = false;
-      setError(result.error);
+      setError(err instanceof Error ? err.message : "Couldn't open the payment window. Please try again.");
       setStage("review");
     }
   }
@@ -368,26 +412,38 @@ function CheckoutDialog({
                 </p>
               </div>
 
-              <fieldset>
-                <legend className="text-ink text-[0.85rem] font-medium">Payment method</legend>
-                <div className="mt-2.5 grid grid-cols-3 gap-2">
-                  {METHODS.map(({ id, label, hint, icon: Icon }) => (
-                    <label
-                      key={id}
-                      className={cn(
-                        "flex cursor-pointer flex-col items-center gap-1 rounded-xl border px-2 py-3 text-center transition-colors",
-                        method === id ? "border-forest bg-forest/5" : "border-line/70 hover:border-forest/40",
-                        locked && "pointer-events-none opacity-60",
-                      )}
-                    >
-                      <input type="radio" name="method" value={id} checked={method === id} onChange={() => setMethod(id)} className="sr-only" />
-                      <Icon className={cn("size-5", method === id ? "text-forest" : "text-muted")} strokeWidth={1.6} />
-                      <span className="text-ink text-[0.8rem] font-medium">{label}</span>
-                      <span className="text-muted text-[0.65rem] leading-tight">{hint}</span>
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
+              {order.testMode ? (
+                // Dummy mode never opens a real payment widget, so this is
+                // just a preference — kept for the reviewer/demo experience.
+                <fieldset>
+                  <legend className="text-ink text-[0.85rem] font-medium">Payment method</legend>
+                  <div className="mt-2.5 grid grid-cols-3 gap-2">
+                    {METHODS.map(({ id, label, hint, icon: Icon }) => (
+                      <label
+                        key={id}
+                        className={cn(
+                          "flex cursor-pointer flex-col items-center gap-1 rounded-xl border px-2 py-3 text-center transition-colors",
+                          method === id ? "border-forest bg-forest/5" : "border-line/70 hover:border-forest/40",
+                          locked && "pointer-events-none opacity-60",
+                        )}
+                      >
+                        <input type="radio" name="method" value={id} checked={method === id} onChange={() => setMethod(id)} className="sr-only" />
+                        <Icon className={cn("size-5", method === id ? "text-forest" : "text-muted")} strokeWidth={1.6} />
+                        <span className="text-ink text-[0.8rem] font-medium">{label}</span>
+                        <span className="text-muted text-[0.65rem] leading-tight">{hint}</span>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+              ) : (
+                // Real checkout: Razorpay's own widget shows the method
+                // picker (UPI, card, net banking…) — showing a second one
+                // here first would just make the buyer choose twice.
+                <p className="border-line/70 text-muted flex items-center gap-2.5 rounded-xl border px-3.5 py-2.5 text-[0.8rem]">
+                  <Smartphone className="text-forest size-4 shrink-0" strokeWidth={1.6} />
+                  You&rsquo;ll choose UPI, card or net banking in the next step.
+                </p>
+              )}
 
               {order.course.includedItems.length > 0 && (
                 <ul className="space-y-1.5">
