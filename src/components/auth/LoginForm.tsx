@@ -96,11 +96,6 @@ export function LoginForm() {
           )}
         </button>
       </form>
-
-      <p className="text-muted mt-5 text-[0.75rem] leading-relaxed">
-        Admin sign-in: <span className="text-ink">admin@churroacademy.com</span> /{" "}
-        <span className="text-ink">churro-admin</span>
-      </p>
     </div>
   );
 }
