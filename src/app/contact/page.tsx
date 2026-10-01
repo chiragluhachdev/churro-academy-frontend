@@ -36,7 +36,7 @@ export default async function ContactPage() {
         {
           "@type": "ContactPoint",
           contactType: "customer support",
-          telephone: "+91-8130809374",
+          telephone: "+91-9910867793",
           email: SUPPORT_EMAIL,
           availableLanguage: ["English", "Hindi"],
         },

@@ -43,9 +43,9 @@ export const footerNav: { heading: string; links: NavLink[] }[] = [
 
 /**
  * WhatsApp contact for the floating chat button. International format with no
- * "+", spaces or dashes — wa.me requires that exact shape. (+91 8130809374)
+ * "+", spaces or dashes — wa.me requires that exact shape. (+91 9910867793)
  */
-export const whatsappNumber = "918130809374";
+export const whatsappNumber = "919910867793";
 
 /** Pre-filled first message, URL-encoded by the button. */
 export const whatsappGreeting =
