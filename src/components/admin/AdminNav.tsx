@@ -11,6 +11,7 @@ import {
   Newspaper,
   Radio,
   Receipt,
+  Users,
 } from "lucide-react";
 
 import { cn } from "@/lib/format";
@@ -21,6 +22,7 @@ const SECTIONS = [
     items: [
       { label: "Overview", href: "/admin", icon: LayoutDashboard },
       { label: "Courses", href: "/admin/courses", icon: BookOpen },
+      { label: "Customers", href: "/admin/customers", icon: Users },
       { label: "Billing", href: "/admin/billing", icon: CreditCard },
       { label: "Live sessions", href: "/admin/live-sessions", icon: Radio },
     ],

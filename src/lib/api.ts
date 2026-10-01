@@ -133,6 +133,29 @@ export interface AdminOrder {
   emailError: string;
 }
 
+/** One row in the customers screen — a paying student, rolled up across all their orders. */
+export interface AdminCustomer {
+  email: string;
+  name: string;
+  phone: string;
+  totalSpent: number;
+  orderCount: number;
+  firstPurchaseAt?: string;
+  lastPurchaseAt?: string;
+}
+
+/** One customer's full purchase history. */
+export interface AdminCustomerDetail extends AdminCustomer {
+  orders: {
+    id: string;
+    courseTitle: string;
+    amount: number;
+    invoiceNumber: string;
+    paidAt?: string;
+    emailSentAt?: string;
+  }[];
+}
+
 /** Everything the printable invoice needs, for one order. */
 export interface AdminOrderDetail {
   id: string;
@@ -192,6 +215,14 @@ export const adminApi = {
   updateBilling: (token: string, data: BillingInfo) =>
     api<{ billing: BillingInfo }>("/admin/content/billing", { method: "PUT", token, body: data }).then(
       (r) => r.billing,
+    ),
+  customers: (token: string, params?: { q?: string }) => {
+    const qs = params?.q ? `?q=${encodeURIComponent(params.q)}` : "";
+    return api<{ customers: AdminCustomer[] }>(`/admin/customers${qs}`, { token }).then((r) => r.customers);
+  },
+  customer: (token: string, email: string) =>
+    api<{ customer: AdminCustomerDetail }>(`/admin/customers/${encodeURIComponent(email)}`, { token }).then(
+      (r) => r.customer,
     ),
   liveSessions: (token: string) =>
     api<{ sessions: LiveSession[] }>("/admin/live-sessions", { token }).then((r) => r.sessions),
