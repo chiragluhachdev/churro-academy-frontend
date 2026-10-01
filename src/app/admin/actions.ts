@@ -9,6 +9,8 @@ import {
   type BillingInfo,
   type Chef,
   type CourseInput,
+  type LiveSession,
+  type LiveSessionInput,
   type Post,
   type Testimonial,
 } from "@/lib/api";
@@ -112,6 +114,17 @@ export async function saveBillingAction(input: BillingInfo) {
 /** Resends the enrollment email with whatever video links exist right now. */
 export async function resendOrderEmailAction(orderId: string) {
   return run(null, (token) => api(`/admin/orders/${orderId}/resend-email`, { method: "POST", token }));
+}
+
+/* -------------------------------------------------------------- live sessions -- */
+
+/** Creates the announcement and broadcasts it to every paid student right away. */
+export async function createLiveSessionAction(input: LiveSessionInput) {
+  return run(null, (token) =>
+    api<{ session: LiveSession }>("/admin/live-sessions", { method: "POST", token, body: input }).then(
+      (r) => r.session,
+    ),
+  );
 }
 
 /* ---------------------------------------------------------------- uploads -- */

@@ -193,6 +193,12 @@ export const adminApi = {
     api<{ billing: BillingInfo }>("/admin/content/billing", { method: "PUT", token, body: data }).then(
       (r) => r.billing,
     ),
+  liveSessions: (token: string) =>
+    api<{ sessions: LiveSession[] }>("/admin/live-sessions", { token }).then((r) => r.sessions),
+  createLiveSession: (token: string, data: LiveSessionInput) =>
+    api<{ session: LiveSession }>("/admin/live-sessions", { method: "POST", token, body: data }).then(
+      (r) => r.session,
+    ),
 };
 
 /** Fields the admin course form edits. */
@@ -344,6 +350,29 @@ export function formatPostDate(iso: string): string {
     month: "short",
     year: "numeric",
   });
+}
+
+/* ---------------------------------------------------------- live sessions -- */
+
+/** A live-class announcement, broadcast by email to every paid student when created. */
+export interface LiveSession {
+  id: string;
+  title: string;
+  description: string;
+  link: string;
+  scheduledAt: string;
+  sentAt?: string;
+  recipientCount: number;
+  failedCount: number;
+  createdAt?: string;
+}
+
+export interface LiveSessionInput {
+  title: string;
+  description: string;
+  link: string;
+  /** ISO datetime string. */
+  scheduledAt: string;
 }
 
 /* ---------------------------------------------------------------- checkout -- */

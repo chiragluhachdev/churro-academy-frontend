@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   MessageSquareQuote,
   Newspaper,
+  Radio,
   Receipt,
 } from "lucide-react";
 
@@ -21,6 +22,7 @@ const SECTIONS = [
       { label: "Overview", href: "/admin", icon: LayoutDashboard },
       { label: "Courses", href: "/admin/courses", icon: BookOpen },
       { label: "Billing", href: "/admin/billing", icon: CreditCard },
+      { label: "Live sessions", href: "/admin/live-sessions", icon: Radio },
     ],
   },
   {
