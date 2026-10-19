@@ -252,7 +252,7 @@ export interface CourseInput {
   curriculum?: CurriculumModule[];
   whatYouWillLearn: string[];
   includedItems: string[];
-  requirements: string[];
+  requirements?: string[];
   faqs: { question: string; answer: string }[];
   /** Where the recordings live — one Drive link/password per course, emailed to a buyer once paid. */
   driveLink: string;

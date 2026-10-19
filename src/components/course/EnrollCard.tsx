@@ -1,7 +1,6 @@
 import {
   ArrowRight,
   BarChart3,
-  BookOpen,
   Check,
   Clock,
   Infinity as InfinityIcon,
@@ -90,27 +89,6 @@ export function EnrollCard({ course }: EnrollCardProps) {
                     aria-hidden="true"
                   />
                   <span className="text-muted text-[0.82rem] leading-snug">{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Requirements */}
-        {course.requirements && course.requirements.length > 0 && (
-          <div className="border-line/70 mx-7 border-t pt-5 pb-7">
-            <p className="text-ink text-[0.82rem] font-semibold uppercase tracking-wide">
-              Requirements
-            </p>
-            <ul className="mt-3.5 space-y-2.5">
-              {course.requirements.map((req) => (
-                <li key={req} className="flex items-start gap-2.5">
-                  <BookOpen
-                    className="text-muted mt-0.5 size-4 shrink-0"
-                    strokeWidth={1.5}
-                    aria-hidden="true"
-                  />
-                  <span className="text-muted text-[0.82rem] leading-snug">{req}</span>
                 </li>
               ))}
             </ul>

@@ -50,9 +50,6 @@ export function CourseForm({ initialData }: { initialData?: AdminCourse }) {
   const [includedItems, setIncludedItems] = useState<string[]>(
     () => initialData?.includedItems ?? [],
   );
-  const [requirements, setRequirements] = useState<string[]>(
-    () => initialData?.requirements ?? [],
-  );
   const [faqs, setFaqs] = useState(() => initialData?.faqs ?? []);
 
   const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) =>
@@ -88,7 +85,6 @@ export function CourseForm({ initialData }: { initialData?: AdminCourse }) {
       drivePassword: form.drivePassword.trim(),
       whatYouWillLearn: clean(whatYouWillLearn),
       includedItems: clean(includedItems),
-      requirements: clean(requirements),
       faqs: faqs
         .map((f) => ({ question: f.question.trim(), answer: f.answer.trim() }))
         .filter((f) => f.question && f.answer),
@@ -240,14 +236,6 @@ export function CourseForm({ initialData }: { initialData?: AdminCourse }) {
             onChange={setIncludedItems}
             placeholder="e.g. Lifetime access"
             addLabel="Add item"
-          />
-        </FieldGroup>
-        <FieldGroup label="Requirements" hint="Optional — what students need before starting.">
-          <StringListEditor
-            value={requirements}
-            onChange={setRequirements}
-            placeholder="e.g. A standard home oven"
-            addLabel="Add requirement"
           />
         </FieldGroup>
         <FieldGroup label="Course FAQs" hint="Optional — shown on the course page.">
