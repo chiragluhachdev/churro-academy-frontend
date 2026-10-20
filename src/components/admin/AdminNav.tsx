@@ -11,6 +11,7 @@ import {
   Newspaper,
   Radio,
   Receipt,
+  Settings,
   Users,
 } from "lucide-react";
 
@@ -35,6 +36,10 @@ const SECTIONS = [
       { label: "Chef profile", href: "/admin/chef", icon: ChefHat },
       { label: "Company details", href: "/admin/company", icon: Receipt },
     ],
+  },
+  {
+    heading: "System",
+    items: [{ label: "Settings", href: "/admin/settings", icon: Settings }],
   },
 ];
 

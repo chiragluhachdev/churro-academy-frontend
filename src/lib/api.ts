@@ -56,6 +56,7 @@ export const CACHE_TAGS = {
   posts: "posts",
   chef: "chef",
   billing: "billing",
+  site: "site",
 } as const;
 
 /* ------------------------------------------------------------ catalogue -- */
@@ -216,6 +217,8 @@ export const adminApi = {
     api<{ billing: BillingInfo }>("/admin/content/billing", { method: "PUT", token, body: data }).then(
       (r) => r.billing,
     ),
+  updateSiteSettings: (token: string, data: SiteSettings) =>
+    api<{ site: SiteSettings }>("/admin/content/site", { method: "PUT", token, body: data }).then((r) => r.site),
   customers: (token: string, params?: { q?: string }) => {
     const qs = params?.q ? `?q=${encodeURIComponent(params.q)}` : "";
     return api<{ customers: AdminCustomer[] }>(`/admin/customers${qs}`, { token }).then((r) => r.customers);
@@ -373,6 +376,20 @@ export async function fetchBilling(): Promise<BillingInfo> {
     tags: [CACHE_TAGS.billing],
   });
   return billing;
+}
+
+/** Site-wide switches — currently just the maintenance lockout. */
+export interface SiteSettings {
+  maintenanceEnabled: boolean;
+  maintenanceMessage: string;
+}
+
+export async function fetchSiteSettings(): Promise<SiteSettings> {
+  const { site } = await api<{ site: SiteSettings }>("/content/site", {
+    revalidate: 300,
+    tags: [CACHE_TAGS.site],
+  });
+  return site;
 }
 
 export function formatPostDate(iso: string): string {

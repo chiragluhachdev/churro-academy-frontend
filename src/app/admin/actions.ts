@@ -12,6 +12,7 @@ import {
   type LiveSession,
   type LiveSessionInput,
   type Post,
+  type SiteSettings,
   type Testimonial,
 } from "@/lib/api";
 import { requireAdmin } from "@/lib/session";
@@ -106,6 +107,14 @@ export async function saveChefAction(input: ChefInput) {
 export async function saveBillingAction(input: BillingInfo) {
   return run(CACHE_TAGS.billing, (token) =>
     api("/admin/content/billing", { method: "PUT", token, body: input }),
+  );
+}
+
+/* ------------------------------------------------------------- site settings -- */
+
+export async function saveSiteSettingsAction(input: SiteSettings) {
+  return run(CACHE_TAGS.site, (token) =>
+    api("/admin/content/site", { method: "PUT", token, body: input }),
   );
 }
 
