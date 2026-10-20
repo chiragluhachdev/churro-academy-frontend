@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, LayoutDashboard, LogOut, Menu, User as UserIcon, X } from "lucide-react";
+import { ArrowRight, Calculator, LayoutDashboard, LogOut, Menu, User as UserIcon, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { logoutAction } from "@/app/actions/auth";
@@ -51,7 +51,7 @@ export function Navbar() {
   return (
     <header
       className={cn(
-        "fixed inset-x-0 top-0 z-50 transition-[background-color,box-shadow,backdrop-filter] duration-500 ease-[var(--ease-editorial)]",
+        "fixed inset-x-0 top-0 z-50 transition-[background-color,box-shadow,backdrop-filter] duration-500 ease-[var(--ease-editorial)] print:hidden",
         scrolled
           ? "bg-cream/85 shadow-[0_1px_0_0_rgba(41,75,50,0.08)] backdrop-blur-md"
           : "bg-transparent",
@@ -89,7 +89,11 @@ export function Navbar() {
           })}
         </ul>
 
-        <div className="hidden items-center gap-6 lg:flex">
+        <div className="hidden items-center gap-5 lg:flex">
+          <ButtonLink href="/calculator" variant="outline" size="sm">
+            <Calculator className="size-4" />
+            Cost Calculator
+          </ButtonLink>
           {signedIn ? (
             <div ref={accountRef} className="relative">
               <button
@@ -182,22 +186,32 @@ export function Navbar() {
                 </li>
               ))}
             </ul>
-            <div className="flex items-center gap-4 px-5 pt-2 pb-7 sm:px-8">
+            <div className="flex flex-col gap-3 px-5 pt-2 pb-7 sm:px-8">
               <ButtonLink
-                href="/courses"
-                className="flex-1"
-                onClick={() => setMenuOpen(false)}
-              >
-                Explore
-                <ArrowRight className="size-4" />
-              </ButtonLink>
-              <ButtonLink
-                href={signedIn ? home : "/login"}
+                href="/calculator"
                 variant="outline"
                 onClick={() => setMenuOpen(false)}
               >
-                {signedIn ? "Dashboard" : "Log in"}
+                <Calculator className="size-4" />
+                Cost Calculator
               </ButtonLink>
+              <div className="flex items-center gap-4">
+                <ButtonLink
+                  href="/courses"
+                  className="flex-1"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Explore
+                  <ArrowRight className="size-4" />
+                </ButtonLink>
+                <ButtonLink
+                  href={signedIn ? home : "/login"}
+                  variant="outline"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {signedIn ? "Dashboard" : "Log in"}
+                </ButtonLink>
+              </div>
             </div>
             {signedIn && (
               <form action={logoutAction} className="border-line/60 border-t px-5 pb-6 sm:px-8">

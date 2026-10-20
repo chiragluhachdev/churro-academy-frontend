@@ -19,7 +19,7 @@ export async function Footer() {
   ].filter((s): s is { label: string; href: string; Icon: typeof Mail } => Boolean(s.href));
 
   return (
-    <footer className="bg-forest-dark text-cream">
+    <footer className="bg-forest-dark text-cream print:hidden">
       <div className="mx-auto max-w-[1400px] px-5 py-10 sm:px-8 sm:py-14 lg:py-20">
         <div className="grid grid-cols-2 gap-x-6 gap-y-9 lg:grid-cols-[1.6fr_1fr_1fr_1fr_1.5fr] lg:gap-10">
           <div className="col-span-2 lg:col-span-1">
