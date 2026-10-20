@@ -83,6 +83,19 @@ export function SiteSettingsForm({ initialData }: { initialData: SiteSettings })
         </Field>
       </Card>
 
+      <Card title="Recipe costing calculator">
+        <p className="text-muted -mt-2 text-[0.85rem]">
+          The free tool at /calculator. Locked by default — while it&rsquo;s off, the header link is hidden and the
+          page itself shows a &ldquo;not available yet&rdquo; message to visitors.
+        </p>
+        <Toggle
+          label="Calculator available to visitors"
+          hint="Turn this on to unlock the tool and show it in the header."
+          checked={form.calculatorEnabled}
+          onChange={(v) => set("calculatorEnabled", v)}
+        />
+      </Card>
+
       <FormActions pending={pending} error={error} saved={saved} saveLabel="Save changes" />
     </form>
   );

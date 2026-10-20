@@ -13,12 +13,14 @@ import { ButtonLink } from "@/components/ui/Button";
 import { primaryNav } from "@/data/site";
 import { cn } from "@/lib/format";
 
-export function Navbar() {
+export function Navbar({ calculatorEnabled }: { calculatorEnabled: boolean }) {
   const pathname = usePathname();
   const { data: session } = useSession();
   // The only account that can ever sign in is the admin's — checkout is guest-only.
   const signedIn = Boolean(session?.user);
   const home = signedIn ? "/admin" : "/";
+  // Locked tools stay visible to a signed-in admin, so they can preview before unlocking.
+  const showCalculator = calculatorEnabled || signedIn;
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -90,10 +92,12 @@ export function Navbar() {
         </ul>
 
         <div className="hidden items-center gap-5 lg:flex">
-          <ButtonLink href="/calculator" variant="outline" size="sm">
-            <Calculator className="size-4" />
-            Cost Calculator
-          </ButtonLink>
+          {showCalculator && (
+            <ButtonLink href="/calculator" variant="outline" size="sm">
+              <Calculator className="size-4" />
+              Cost Calculator
+            </ButtonLink>
+          )}
           {signedIn ? (
             <div ref={accountRef} className="relative">
               <button
@@ -187,14 +191,16 @@ export function Navbar() {
               ))}
             </ul>
             <div className="flex flex-col gap-3 px-5 pt-2 pb-7 sm:px-8">
-              <ButtonLink
-                href="/calculator"
-                variant="outline"
-                onClick={() => setMenuOpen(false)}
-              >
-                <Calculator className="size-4" />
-                Cost Calculator
-              </ButtonLink>
+              {showCalculator && (
+                <ButtonLink
+                  href="/calculator"
+                  variant="outline"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <Calculator className="size-4" />
+                  Cost Calculator
+                </ButtonLink>
+              )}
               <div className="flex items-center gap-4">
                 <ButtonLink
                   href="/courses"

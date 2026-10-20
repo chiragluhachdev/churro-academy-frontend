@@ -4,6 +4,8 @@ import { Calculator, Download, Printer, Scale, TrendingUp } from "lucide-react";
 import { CostCalculator } from "@/components/calculator/CostCalculator";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { Reveal } from "@/components/ui/Reveal";
+import { fetchSiteSettings } from "@/lib/api";
+import { getSession } from "@/lib/session";
 
 export const metadata: Metadata = {
   title: "Recipe Costing Calculator",
@@ -20,7 +22,30 @@ const FEATURES = [
   { label: "Export to CSV", icon: Download },
 ];
 
-export default function CalculatorPage() {
+export default async function CalculatorPage() {
+  const [site, session] = await Promise.all([
+    fetchSiteSettings().catch(() => undefined),
+    getSession(),
+  ]);
+  // Locked by default — a signed-in admin can still preview it before unlocking.
+  const unlocked = Boolean(site?.calculatorEnabled) || Boolean(session?.user);
+
+  if (!unlocked) {
+    return (
+      <section className="bg-cream flex min-h-screen items-center justify-center px-5 py-28">
+        <Reveal className="max-w-md text-center">
+          <Eyebrow>Free Tool</Eyebrow>
+          <h1 className="font-display text-ink mt-4 text-[1.9rem] leading-[1.15] font-medium tracking-[-0.015em] sm:text-[2.3rem]">
+            Not available yet
+          </h1>
+          <p className="text-muted mt-4 text-[0.95rem] leading-[1.75]">
+            The recipe costing calculator is coming soon — check back shortly.
+          </p>
+        </Reveal>
+      </section>
+    );
+  }
+
   return (
     <>
       <section className="bg-cream-warm border-line/60 border-b">

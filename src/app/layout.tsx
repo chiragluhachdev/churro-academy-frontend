@@ -6,7 +6,7 @@ import { ChatWidget } from "@/components/chat/ChatWidget";
 import { ChromeGate } from "@/components/layout/ChromeGate";
 import { Footer } from "@/components/layout/Footer";
 import { Navbar } from "@/components/layout/Navbar";
-import { fetchChef } from "@/lib/api";
+import { fetchChef, fetchSiteSettings } from "@/lib/api";
 import { JsonLd, SITE_URL, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 import "./globals.css";
 
@@ -97,11 +97,12 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const [session, chef] = await Promise.all([
+  const [session, chef, site] = await Promise.all([
     auth(),
     // sameAs on the sitewide Organization schema; never worth failing the
     // whole page over if content service hiccups.
     fetchChef().catch(() => undefined),
+    fetchSiteSettings().catch(() => undefined),
   ]);
 
   return (
@@ -114,7 +115,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <JsonLd data={websiteJsonLd()} />
         <SessionProvider session={session}>
           <ChromeGate>
-            <Navbar />
+            <Navbar calculatorEnabled={site?.calculatorEnabled ?? false} />
           </ChromeGate>
         <main id="main" className="flex-1">
           {children}

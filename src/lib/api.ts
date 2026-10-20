@@ -378,10 +378,12 @@ export async function fetchBilling(): Promise<BillingInfo> {
   return billing;
 }
 
-/** Site-wide switches — currently just the maintenance lockout. */
+/** Site-wide switches. */
 export interface SiteSettings {
   maintenanceEnabled: boolean;
   maintenanceMessage: string;
+  /** Locked by default — hides the nav link and the /calculator page until the admin turns it on. */
+  calculatorEnabled: boolean;
 }
 
 export async function fetchSiteSettings(): Promise<SiteSettings> {
