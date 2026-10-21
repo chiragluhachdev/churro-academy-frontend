@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import type { ReactNode } from "react";
 
 import { cn } from "@/lib/format";
@@ -15,17 +15,11 @@ interface RevealProps {
 
 /**
  * Scroll-triggered entrance used across every section. Deliberately restrained:
- * a short rise and fade on a long ease, once per element, and nothing at all
- * when the visitor prefers reduced motion.
+ * a short rise and fade on a long ease, once per element. Reduced motion is
+ * handled by MotionProvider (fade only, no rise).
  */
 export function Reveal({ children, delay = 0, className, as = "div" }: RevealProps) {
-  const reduceMotion = useReducedMotion();
   const Component = motion[as];
-
-  if (reduceMotion) {
-    const Static = as;
-    return <Static className={className}>{children}</Static>;
-  }
 
   return (
     <Component

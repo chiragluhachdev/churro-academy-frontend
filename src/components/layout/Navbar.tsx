@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, Calculator, LayoutDashboard, LogOut, Menu, User as UserIcon, X } from "lucide-react";
+import { ArrowRight, LayoutDashboard, LogOut, Menu, User as UserIcon, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { logoutAction } from "@/app/actions/auth";
@@ -13,14 +13,12 @@ import { ButtonLink } from "@/components/ui/Button";
 import { primaryNav } from "@/data/site";
 import { cn } from "@/lib/format";
 
-export function Navbar({ calculatorEnabled }: { calculatorEnabled: boolean }) {
+export function Navbar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   // The only account that can ever sign in is the admin's — checkout is guest-only.
   const signedIn = Boolean(session?.user);
   const home = signedIn ? "/admin" : "/";
-  // Locked tools stay visible to a signed-in admin, so they can preview before unlocking.
-  const showCalculator = calculatorEnabled || signedIn;
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -92,12 +90,6 @@ export function Navbar({ calculatorEnabled }: { calculatorEnabled: boolean }) {
         </ul>
 
         <div className="hidden items-center gap-5 lg:flex">
-          {showCalculator && (
-            <ButtonLink href="/calculator" variant="outline" size="sm">
-              <Calculator className="size-4" />
-              Cost Calculator
-            </ButtonLink>
-          )}
           {signedIn ? (
             <div ref={accountRef} className="relative">
               <button
@@ -191,16 +183,6 @@ export function Navbar({ calculatorEnabled }: { calculatorEnabled: boolean }) {
               ))}
             </ul>
             <div className="flex flex-col gap-3 px-5 pt-2 pb-7 sm:px-8">
-              {showCalculator && (
-                <ButtonLink
-                  href="/calculator"
-                  variant="outline"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  <Calculator className="size-4" />
-                  Cost Calculator
-                </ButtonLink>
-              )}
               <div className="flex items-center gap-4">
                 <ButtonLink
                   href="/courses"

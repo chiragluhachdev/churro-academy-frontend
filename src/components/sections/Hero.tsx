@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import { ArrowRight, Award, ChefHat, MonitorPlay, Play } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useCallback, useState } from "react";
@@ -18,21 +18,17 @@ const highlights: { icon: LucideIcon; title: string; body: string }[] = [
 ];
 
 export function Hero() {
-  const reduceMotion = useReducedMotion();
   const [introOpen, setIntroOpen] = useState(false);
 
   const openIntro = useCallback(() => setIntroOpen(true), []);
   const closeIntro = useCallback(() => setIntroOpen(false), []);
 
   // One shared entrance: children rise in sequence rather than all at once.
-  const rise = (delay: number) =>
-    reduceMotion
-      ? {}
-      : {
-          initial: { opacity: 0, y: 24 },
-          animate: { opacity: 1, y: 0 },
-          transition: { duration: 0.85, delay, ease: [0.22, 1, 0.36, 1] as const },
-        };
+  const rise = (delay: number) => ({
+    initial: { opacity: 0, y: 24 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.85, delay, ease: [0.22, 1, 0.36, 1] as const },
+  });
 
   return (
     <section className="relative z-10 pt-24 lg:pt-20">
@@ -42,13 +38,9 @@ export function Hero() {
       <motion.div
         aria-hidden="true"
         className="pointer-events-none absolute top-20 right-0 -bottom-8 hidden w-[72%] lg:block"
-        {...(reduceMotion
-          ? {}
-          : {
-              initial: { opacity: 0, scale: 1.04 },
-              animate: { opacity: 1, scale: 1 },
-              transition: { duration: 1.2, ease: [0.22, 1, 0.36, 1] as const },
-            })}
+        initial={{ opacity: 0, scale: 1.04 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
       >
         <Image
           src={heroPanel}

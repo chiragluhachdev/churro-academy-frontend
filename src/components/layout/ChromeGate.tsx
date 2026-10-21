@@ -4,7 +4,8 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
 /** Routes that supply their own shell instead of the marketing chrome. */
-const APP_ROUTES = ["/login", "/admin", "/invoice"];
+// /churroai is its own product (headed for its own domain), with its own header and footer.
+const APP_ROUTES = ["/login", "/admin", "/invoice", "/churroai"];
 
 /**
  * Hides the marketing navbar and footer on the auth screen and the admin
