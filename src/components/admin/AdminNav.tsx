@@ -12,6 +12,7 @@ import {
   Radio,
   Receipt,
   Settings,
+  Sparkles,
   Users,
 } from "lucide-react";
 
@@ -26,6 +27,7 @@ const SECTIONS = [
       { label: "Customers", href: "/admin/customers", icon: Users },
       { label: "Billing", href: "/admin/billing", icon: CreditCard },
       { label: "Live sessions", href: "/admin/live-sessions", icon: Radio },
+      { label: "Churro AI", href: "/admin/churro-ai", icon: Sparkles },
     ],
   },
   {

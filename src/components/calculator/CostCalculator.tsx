@@ -223,7 +223,7 @@ export function CostCalculator() {
                             <select
                               value={ing.unit}
                               onChange={(e) => setIngredient(ing.id, { unit: e.target.value })}
-                              className={cn(inputClass, "w-20 py-2")}
+                              className={cn(inputClass, "w-[4.75rem] min-w-[4.75rem] px-2.5 py-2")}
                             >
                               {UNITS.map((u) => (
                                 <option key={u} value={u}>

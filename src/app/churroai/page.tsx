@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { ChurroAiLanding } from "@/components/churroai/ChurroAiLanding";
 import { whatsappNumber } from "@/data/site";
-import { fetchSiteSettings } from "@/lib/api";
+import { fetchAiConfig, fetchAiMember } from "@/lib/churroai";
 import { SITE_URL } from "@/lib/seo";
 import { getSession } from "@/lib/session";
 
@@ -20,12 +20,32 @@ export const metadata: Metadata = {
 };
 
 export default async function ChurroAiPage() {
-  const [site, session] = await Promise.all([fetchSiteSettings().catch(() => undefined), getSession()]);
-  // Same rule as /calculator itself: open to visitors once unlocked in Settings, always open to the admin.
-  const calculatorLive = Boolean(site?.calculatorEnabled) || Boolean(session?.user);
-  const earlyAccessHref = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
-    "Hi! I'd like early access to Churro AI's Recipe Cost Calculator.",
-  )}`;
+  const [config, member, session] = await Promise.all([
+    fetchAiConfig(),
+    fetchAiMember().catch(() => null),
+    getSession(),
+  ]);
+  const isAdmin = Boolean(session?.user);
+  const hasAccess = isAdmin || member?.access === "pass" || member?.access === "trial";
 
-  return <ChurroAiLanding calculatorLive={calculatorLive} earlyAccessHref={earlyAccessHref} academyUrl={SITE_URL} />;
+  return (
+    <ChurroAiLanding
+      cta={{
+        // Switched on in Admin → Churro AI; the admin can always get in to preview it.
+        live: config.calculatorEnabled || isAdmin,
+        label: hasAccess ? "Open Recipe Calculator" : "Try it free",
+        earlyAccessHref: `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
+          "Hi! I'd like early access to Churro AI's Recipe Cost Calculator.",
+        )}`,
+      }}
+      pricing={{
+        passName: config.passName,
+        passPrice: config.passPrice,
+        passDays: config.passDays,
+        trialMinutes: config.trialMinutes,
+      }}
+      signedIn={Boolean(member)}
+      academyUrl={SITE_URL}
+    />
+  );
 }

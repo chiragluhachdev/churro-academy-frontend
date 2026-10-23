@@ -14,7 +14,9 @@ export default async function AdminSettingsPage() {
       <Reveal>
         <div>
           <h1 className="font-display text-4xl font-medium tracking-tight">Settings</h1>
-          <p className="text-muted mt-2 text-[0.95rem]">Site-wide switches — currently just the maintenance lockout.</p>
+          <p className="text-muted mt-2 text-[0.95rem]">
+            Site-wide switches. Churro AI&rsquo;s price, free try and calculator switch are under Churro AI.
+          </p>
         </div>
       </Reveal>
 

@@ -15,6 +15,8 @@ import {
   type SiteSettings,
   type Testimonial,
 } from "@/lib/api";
+import { AI_CACHE_TAG } from "@/lib/churroai";
+import type { AiConfig } from "@/lib/churroaiShared";
 import { requireAdmin } from "@/lib/session";
 
 /**
@@ -116,6 +118,17 @@ export async function saveSiteSettingsAction(input: SiteSettings) {
   return run(CACHE_TAGS.site, (token) =>
     api("/admin/content/site", { method: "PUT", token, body: input }),
   );
+}
+
+/* -------------------------------------------------------------- churro ai -- */
+
+export async function saveAiSettingsAction(input: AiConfig) {
+  return run(AI_CACHE_TAG, (token) => api("/admin/ai/settings", { method: "PUT", token, body: input }));
+}
+
+/** grant = one free pass length · revoke = end the pass and any running try · reset-trial = give free tries back. */
+export async function aiMemberAction(memberId: string, action: "grant" | "revoke" | "reset-trial") {
+  return run(null, (token) => api(`/admin/ai/members/${memberId}/${action}`, { method: "POST", token }));
 }
 
 /* ----------------------------------------------------------------- orders -- */

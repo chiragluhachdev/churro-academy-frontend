@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -21,16 +20,29 @@ import type { LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Sparkle4 } from "@/components/brand/Sparkle";
+import { Brand } from "@/components/churroai/Brand";
 import { LiveDemo } from "@/components/churroai/LiveDemo";
+import { formatTrialLength, passLength } from "@/lib/churroaiShared";
 import { buttonBase, buttonSizes, buttonVariants } from "@/components/ui/Button";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { Reveal } from "@/components/ui/Reveal";
-import { cn } from "@/lib/format";
+import { cn, formatPrice } from "@/lib/format";
+
+/** Set in Admin → Churro AI. */
+export interface Pricing {
+  passName: string;
+  passPrice: number;
+  passDays: number;
+  trialMinutes: number;
+}
+
+/** `live` = the calculator is switched on; `label` fits the visitor ("Try it free" / "Open Recipe Calculator"). */
+export type Cta = { live: boolean; label: string; earlyAccessHref: string };
 
 interface Props {
-  /** Whether visitors can open the calculator right now (Admin → Settings), or only ask for early access. */
-  calculatorLive: boolean;
-  earlyAccessHref: string;
+  cta: Cta;
+  pricing: Pricing;
+  signedIn: boolean;
   academyUrl: string;
 }
 
@@ -38,29 +50,27 @@ const NAV = [
   { label: "Tools", href: "#tools" },
   { label: "How it works", href: "#how" },
   { label: "Features", href: "#features" },
+  { label: "Pricing", href: "#pricing" },
   { label: "FAQ", href: "#faq" },
 ];
 
-export function ChurroAiLanding({ calculatorLive, earlyAccessHref, academyUrl }: Props) {
-  const cta = { live: calculatorLive, earlyAccessHref };
-
+export function ChurroAiLanding({ cta, pricing, signedIn, academyUrl }: Props) {
   return (
     <div id="top" className="bg-cream text-ink relative overflow-x-clip">
-      <Header cta={cta} />
+      <Header cta={cta} signedIn={signedIn} />
       <Hero cta={cta} />
       <Suite cta={cta} />
       <HowItWorks />
       <Features />
-      <Faq />
+      <PricingSection cta={cta} pricing={pricing} />
+      <Faq pricing={pricing} />
       <FinalCta cta={cta} />
-      <Footer academyUrl={academyUrl} earlyAccessHref={earlyAccessHref} />
+      <Footer academyUrl={academyUrl} earlyAccessHref={cta.earlyAccessHref} />
     </div>
   );
 }
 
 /* ------------------------------------------------------------------ CTA -- */
-
-type Cta = { live: boolean; earlyAccessHref: string };
 
 function PrimaryCta({
   cta,
@@ -84,8 +94,8 @@ function PrimaryCta({
 
   if (cta.live) {
     return (
-      <Link href="/calculator" className={cls}>
-        Open Recipe Calculator
+      <Link href="/churroai/calculator" className={cls}>
+        {cta.label}
         {arrow}
       </Link>
     );
@@ -98,21 +108,9 @@ function PrimaryCta({
   );
 }
 
-function Brand() {
-  return (
-    <span className="flex items-center gap-2.5">
-      <Image src="/logo.png" alt="" width={512} height={512} className="size-8 rounded-full object-cover" />
-      <span className="font-display text-ink text-[1.2rem] font-medium tracking-[-0.01em]">Churro</span>
-      <span className="bg-forest text-cream -ml-1 rounded-md px-1.5 py-0.5 text-[0.66rem] font-semibold tracking-[0.08em]">
-        AI
-      </span>
-    </span>
-  );
-}
-
 /* --------------------------------------------------------------- header -- */
 
-function Header({ cta }: { cta: Cta }) {
+function Header({ cta, signedIn }: { cta: Cta; signedIn: boolean }) {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -133,14 +131,21 @@ function Header({ cta }: { cta: Cta }) {
         <a href="#top" aria-label="Churro AI — top of page">
           <Brand />
         </a>
-        <nav aria-label="Churro AI" className="hidden items-center gap-8 md:flex">
+        <nav aria-label="Churro AI" className="hidden items-center gap-7 lg:flex">
           {NAV.map((item) => (
             <a key={item.href} href={item.href} className="text-ink/70 hover:text-forest text-[0.88rem] transition-colors">
               {item.label}
             </a>
           ))}
         </nav>
-        <PrimaryCta cta={cta} size="sm" />
+        <div className="flex items-center gap-4">
+          {cta.live && !signedIn && (
+            <Link href="/churroai/login" className="text-ink/70 hover:text-forest hidden text-[0.88rem] transition-colors sm:inline">
+              Log in
+            </Link>
+          )}
+          <PrimaryCta cta={cta} size="sm" />
+        </div>
       </div>
     </header>
   );
@@ -208,7 +213,7 @@ function Hero({ cta }: { cta: Cta }) {
           </motion.div>
 
           <motion.ul {...rise(0.45)} className="text-ink/70 mt-9 flex flex-wrap gap-x-6 gap-y-2.5 text-[0.85rem]">
-            {["Built by Churro Academy", "Prices in ₹", "Print & export"].map((item) => (
+            {["First try free", "No card to start", "Built by Churro Academy"].map((item) => (
               <li key={item} className="flex items-center gap-2">
                 <span className="bg-forest/10 text-forest flex size-5 items-center justify-center rounded-full">
                   <Check className="size-3" strokeWidth={2.5} />
@@ -479,38 +484,109 @@ function Features() {
   );
 }
 
+/* -------------------------------------------------------------- pricing -- */
+
+function PricingSection({ cta, pricing }: { cta: Cta; pricing: Pricing }) {
+  const trial = formatTrialLength(pricing.trialMinutes);
+  return (
+    <section id="pricing" className="bg-cream-warm border-line/60 scroll-mt-20 border-y py-20 lg:py-28">
+      <div className="mx-auto max-w-[1240px] px-5 sm:px-8">
+        <Reveal className="mx-auto max-w-2xl text-center">
+          <Eyebrow>Pricing</Eyebrow>
+          <h2 className="font-display text-ink mt-4 text-[2rem] leading-[1.12] font-medium tracking-[-0.015em] sm:text-[2.6rem]">
+            Try it free. Then one simple pass.
+          </h2>
+          <p className="text-muted mt-4 text-[1rem] leading-[1.75]">
+            Sign in with your phone number and cost a real recipe before you pay anything.
+          </p>
+        </Reveal>
+
+        <Reveal delay={0.08}>
+          <div className="mx-auto mt-12 grid max-w-4xl gap-5 md:grid-cols-2">
+            <div className="border-line/70 flex flex-col rounded-3xl border bg-[#fffdf9] p-8 sm:p-9">
+              <p className="text-ink text-[0.95rem] font-semibold">Free try</p>
+              <p className="font-display text-ink mt-4 text-[2.6rem] leading-none font-semibold">₹0</p>
+              <p className="text-muted mt-2 text-[0.85rem]">{trial} with the full calculator</p>
+              <ul className="mt-7 space-y-3 text-[0.9rem]">
+                {["Just your mobile number", "No card needed", "Every feature unlocked"].map((item) => (
+                  <li key={item} className="text-ink/80 flex items-start gap-2.5">
+                    <Check className="text-forest mt-0.5 size-4 shrink-0" strokeWidth={2.2} />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="bg-forest-deep text-cream relative flex flex-col overflow-hidden rounded-3xl p-8 sm:p-9">
+              <div aria-hidden="true" className="bg-forest-soft/40 pointer-events-none absolute -top-20 -right-20 size-64 rounded-full blur-3xl" />
+              <div className="relative flex flex-1 flex-col">
+                <p className="text-[0.95rem] font-semibold">{pricing.passName}</p>
+                <p className="font-display mt-4 text-[2.6rem] leading-none font-semibold">
+                  {formatPrice(pricing.passPrice)}
+                  <span className="text-cream/60 font-sans text-[0.95rem] font-normal"> / {passLength(pricing.passDays)}</span>
+                </p>
+                <p className="text-cream/60 mt-2 text-[0.85rem]">One payment, GST included</p>
+                <ul className="mt-7 space-y-3 text-[0.9rem]">
+                  {["Unlimited use of the calculator", "Print, PDF and CSV export", "Sign in from any device", "GST invoice by email"].map(
+                    (item) => (
+                      <li key={item} className="flex items-start gap-2.5">
+                        <Check className="mt-0.5 size-4 shrink-0 text-[var(--color-gold)]" strokeWidth={2.4} />
+                        {item}
+                      </li>
+                    ),
+                  )}
+                </ul>
+                <div className="mt-8">
+                  <PrimaryCta cta={cta} tone="cream" size="sm" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
 /* ------------------------------------------------------------------ FAQ -- */
 
-const FAQS = [
-  {
-    q: "What is Churro AI?",
-    a: "A growing set of tools from Churro Academy for home bakers and bakery businesses. It starts with the Recipe Cost Calculator.",
-  },
-  {
-    q: "Who is it for?",
-    a: "Anyone who sells what they bake: home bakers, cloud kitchens, cafés and small bakeries.",
-  },
-  {
-    q: "How much does it cost?",
-    a: "Churro AI will be offered as a paid pass covering its tools. We'll share pricing at launch. Message us on WhatsApp if you'd like early access.",
-  },
-  {
-    q: "Do I need to be a Churro Academy student?",
-    a: "No. Churro AI is open to every baker, whether or not you've taken a course with us.",
-  },
-  {
-    q: "Is my recipe data stored anywhere?",
-    a: "No. The calculator runs in your browser, so your numbers aren't sent to or saved on our servers.",
-  },
-  {
-    q: "Can I print or export my costing?",
-    a: "Yes. Print a cost sheet, save it as a PDF from the print window, or export everything to CSV for Excel or Google Sheets.",
-  },
-];
+function faqs(pricing: Pricing) {
+  return [
+    {
+      q: "What is Churro AI?",
+      a: "A growing set of tools from Churro Academy for home bakers and bakery businesses. It starts with the Recipe Cost Calculator.",
+    },
+    {
+      q: "Who is it for?",
+      a: "Anyone who sells what they bake: home bakers, cloud kitchens, cafés and small bakeries.",
+    },
+    {
+      q: "How much does it cost?",
+      a: `Your first try is free — ${formatTrialLength(pricing.trialMinutes)} with the full calculator. After that, the ${pricing.passName} is ${formatPrice(pricing.passPrice)} a ${passLength(pricing.passDays)}, paid once through Razorpay, with a GST invoice by email. It doesn't renew on its own.`,
+    },
+    {
+      q: "How do I sign in?",
+      a: "With your mobile number and a one-time code. There's no password to remember, and you can sign in from any device.",
+    },
+    {
+      q: "Do I need to be a Churro Academy student?",
+      a: "No. Churro AI is open to every baker, whether or not you've taken a course with us.",
+    },
+    {
+      q: "Is my recipe data stored anywhere?",
+      a: "No. The calculator runs in your browser, so your recipe numbers aren't sent to or saved on our servers.",
+    },
+    {
+      q: "Can I print or export my costing?",
+      a: "Yes. Print a cost sheet, save it as a PDF from the print window, or export everything to CSV for Excel or Google Sheets.",
+    },
+  ];
+}
 
-function Faq() {
+function Faq({ pricing }: { pricing: Pricing }) {
+  const FAQS = faqs(pricing);
   return (
-    <section id="faq" className="bg-cream-warm border-line/60 scroll-mt-20 border-y py-20 lg:py-28">
+    <section id="faq" className="scroll-mt-20 py-20 lg:py-28">
       <div className="mx-auto grid max-w-[1240px] gap-12 px-5 sm:px-8 lg:grid-cols-[1fr_1.4fr] lg:gap-20">
         <Reveal>
           <Eyebrow>FAQ</Eyebrow>

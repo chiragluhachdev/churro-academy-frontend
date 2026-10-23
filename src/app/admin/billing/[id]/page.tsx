@@ -81,7 +81,12 @@ export default async function AdminInvoicePage({ params }: { params: Promise<{ i
                   </p>
                 )}
                 <p className="text-muted mt-2 flex items-center gap-1.5 text-[0.78rem]">
-                  {order.courseDelivery.driveLink ? (
+                  {order.kind === "ai_pass" ? (
+                    <>
+                      <CheckCircle2 className="text-forest size-3.5 shrink-0" />
+                      Churro AI pass{order.passUntil ? ` — access until ${formatDate(order.passUntil)}` : ""}.
+                    </>
+                  ) : order.courseDelivery.driveLink ? (
                     <>
                       <CheckCircle2 className="text-forest size-3.5 shrink-0" />
                       Course has a Drive link
@@ -99,7 +104,7 @@ export default async function AdminInvoicePage({ params }: { params: Promise<{ i
               <ResendEmailButton orderId={order.id} label={order.emailSentAt ? "Resend email" : "Send email"} />
             </div>
 
-            {order.courseDelivery.driveLink && (
+            {order.kind !== "ai_pass" && order.courseDelivery.driveLink && (
               <a
                 href={order.courseDelivery.driveLink}
                 target="_blank"

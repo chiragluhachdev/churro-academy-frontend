@@ -1,4 +1,14 @@
+import type { AiConfig, AiMember } from "@/lib/churroaiShared";
 import type { Course, CurriculumModule } from "@/types/course";
+
+/** The numbers Admin → Churro AI leads with. */
+export interface AiAdminSummary {
+  members: number;
+  activePasses: number;
+  onTrial: number;
+  /** Paid pass sales, whole rupees. */
+  revenue: number;
+}
 
 const API_URL = process.env.API_URL ?? "http://localhost:4000";
 
@@ -160,6 +170,10 @@ export interface AdminCustomerDetail extends AdminCustomer {
 /** Everything the printable invoice needs, for one order. */
 export interface AdminOrderDetail {
   id: string;
+  /** A course purchase, or a Churro AI pass. */
+  kind: "course" | "ai_pass";
+  /** Pass orders: the access it granted runs until here. */
+  passUntil?: string;
   invoiceNumber: string;
   status: OrderStatus;
   provider: "dummy" | "razorpay";
@@ -217,6 +231,12 @@ export const adminApi = {
     api<{ billing: BillingInfo }>("/admin/content/billing", { method: "PUT", token, body: data }).then(
       (r) => r.billing,
     ),
+  aiSettings: (token: string) =>
+    api<{ settings: AiConfig }>("/admin/ai/settings", { token }).then((r) => r.settings),
+  aiMembers: (token: string, params?: { q?: string }) => {
+    const qs = params?.q ? `?q=${encodeURIComponent(params.q)}` : "";
+    return api<{ summary: AiAdminSummary; members: AiMember[] }>(`/admin/ai/members${qs}`, { token });
+  },
   updateSiteSettings: (token: string, data: SiteSettings) =>
     api<{ site: SiteSettings }>("/admin/content/site", { method: "PUT", token, body: data }).then((r) => r.site),
   customers: (token: string, params?: { q?: string }) => {
@@ -378,12 +398,10 @@ export async function fetchBilling(): Promise<BillingInfo> {
   return billing;
 }
 
-/** Site-wide switches. */
+/** Site-wide switches. Churro AI's own settings live in Admin → Churro AI. */
 export interface SiteSettings {
   maintenanceEnabled: boolean;
   maintenanceMessage: string;
-  /** Locked by default — hides the nav link and the /calculator page until the admin turns it on. */
-  calculatorEnabled: boolean;
 }
 
 export async function fetchSiteSettings(): Promise<SiteSettings> {
