@@ -11,6 +11,8 @@ export type Viewer = "guest" | "admin";
 
 interface CheckoutContextValue {
   viewer: Viewer;
+  /** Set when the admin has paused course sales: the message to show instead of checkout. */
+  pausedMessage: string | null;
   /** Runs the right action for whoever is looking: open checkout, or edit. */
   enroll: () => void;
 }
@@ -29,6 +31,7 @@ interface CheckoutProviderProps {
   adminEditHref: string;
   /** The page was reached with ?enroll=1 (read server-side), e.g. from a marketing link. */
   autoOpen: boolean;
+  pausedMessage: string | null;
   children: ReactNode;
 }
 
@@ -40,19 +43,20 @@ interface CheckoutProviderProps {
  * There's no account to check ownership against (checkout is guest-only), so
  * enrolling always just opens the modal for anyone but the admin.
  */
-export function CheckoutProvider({ course, viewer, adminEditHref, autoOpen, children }: CheckoutProviderProps) {
+export function CheckoutProvider({ course, viewer, adminEditHref, autoOpen, pausedMessage, children }: CheckoutProviderProps) {
   const router = useRouter();
   const pathname = usePathname();
   // Computed once, from the server-read ?enroll=1 — not reacted to via an
   // effect, so there's no extra render and nothing for the
   // react-hooks/set-state-in-effect rule to flag.
-  const [open, setOpen] = useState(() => autoOpen && viewer === "guest");
+  const [open, setOpen] = useState(() => autoOpen && viewer === "guest" && !pausedMessage);
   const urlTidied = useRef(false);
 
   const enroll = useCallback(() => {
     if (viewer === "admin") return router.push(adminEditHref);
+    if (pausedMessage) return;
     setOpen(true);
-  }, [viewer, router, adminEditHref]);
+  }, [viewer, router, adminEditHref, pausedMessage]);
 
   // Strip ?enroll=1 from the address bar, once, after the initial open above
   // has already been decided from it. No state to set here — just history.
@@ -63,7 +67,7 @@ export function CheckoutProvider({ course, viewer, adminEditHref, autoOpen, chil
   }, [autoOpen, router, pathname]);
 
   return (
-    <CheckoutContext.Provider value={{ viewer, enroll }}>
+    <CheckoutContext.Provider value={{ viewer, pausedMessage, enroll }}>
       {children}
       {viewer === "guest" && <CheckoutModal open={open} course={course} onClose={() => setOpen(false)} />}
     </CheckoutContext.Provider>

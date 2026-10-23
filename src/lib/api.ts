@@ -402,7 +402,13 @@ export async function fetchBilling(): Promise<BillingInfo> {
 export interface SiteSettings {
   maintenanceEnabled: boolean;
   maintenanceMessage: string;
+  /** No new course purchases; course pages show salesPausedMessage instead of "Enroll Now". */
+  salesPaused: boolean;
+  salesPausedMessage: string;
 }
+
+export const SALES_PAUSED_DEFAULT_MESSAGE =
+  "Enrolments are paused right now. Please contact us or try again later.";
 
 export async function fetchSiteSettings(): Promise<SiteSettings> {
   const { site } = await api<{ site: SiteSettings }>("/content/site", {

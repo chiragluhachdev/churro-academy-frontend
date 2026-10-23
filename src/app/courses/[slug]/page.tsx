@@ -10,7 +10,7 @@ import { CourseFAQSection } from "@/components/course/CourseFAQ";
 import { EnrollCard } from "@/components/course/EnrollCard";
 import { EnrollBar } from "@/components/course/EnrollBar";
 import { CheckoutProvider, type Viewer } from "@/components/checkout/CheckoutProvider";
-import { fetchCourse, fetchCourses } from "@/lib/api";
+import { SALES_PAUSED_DEFAULT_MESSAGE, fetchCourse, fetchCourses, fetchSiteSettings } from "@/lib/api";
 import { getSession } from "@/lib/session";
 import { JsonLd, breadcrumbJsonLd, courseJsonLd, faqJsonLd } from "@/lib/seo";
 
@@ -52,14 +52,25 @@ export async function generateMetadata({ params }: CoursePageProps): Promise<Met
 export default async function CoursePage({ params, searchParams }: CoursePageProps) {
   const { slug } = await params;
   const query = (await searchParams) ?? {};
-  const [course, session] = await Promise.all([fetchCourse(slug), getSession()]);
+  const [course, session, site] = await Promise.all([
+    fetchCourse(slug),
+    getSession(),
+    fetchSiteSettings().catch(() => null),
+  ]);
   if (!course) notFound();
 
   const viewer: Viewer = session ? "admin" : "guest";
   const adminEditHref = `/admin/courses/${course.id}/edit`;
+  const pausedMessage = site?.salesPaused ? site.salesPausedMessage || SALES_PAUSED_DEFAULT_MESSAGE : null;
 
   return (
-    <CheckoutProvider course={course} viewer={viewer} adminEditHref={adminEditHref} autoOpen={query.enroll === "1"}>
+    <CheckoutProvider
+      course={course}
+      viewer={viewer}
+      adminEditHref={adminEditHref}
+      autoOpen={query.enroll === "1"}
+      pausedMessage={pausedMessage}
+    >
       <JsonLd data={courseJsonLd(course)} />
       <JsonLd data={faqJsonLd(course.faqs ?? [])} />
       <JsonLd

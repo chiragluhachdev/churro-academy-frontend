@@ -46,7 +46,7 @@ export function EnrollBar({ course }: EnrollBarProps) {
           )}
         </div>
         <div className="w-auto shrink-0">
-          <EnrollButton className="w-auto px-6 py-3 text-[0.9rem]"/>
+          <EnrollButton compact className="w-auto px-6 py-3 text-[0.9rem]" />
         </div>
       </div>
     </div>
