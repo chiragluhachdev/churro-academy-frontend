@@ -411,11 +411,17 @@ export const SALES_PAUSED_DEFAULT_MESSAGE =
   "Enrolments are paused right now. Please contact us or try again later.";
 
 export async function fetchSiteSettings(): Promise<SiteSettings> {
-  const { site } = await api<{ site: SiteSettings }>("/content/site", {
+  const { site } = await api<{ site: Partial<SiteSettings> }>("/content/site", {
     revalidate: 300,
     tags: [CACHE_TAGS.site],
   });
-  return site;
+  // Fill every field: a response cached before a field existed (or an older backend) must not leave one undefined.
+  return {
+    maintenanceEnabled: site.maintenanceEnabled ?? false,
+    maintenanceMessage: site.maintenanceMessage ?? "",
+    salesPaused: site.salesPaused ?? false,
+    salesPausedMessage: site.salesPausedMessage ?? "",
+  };
 }
 
 export function formatPostDate(iso: string): string {
