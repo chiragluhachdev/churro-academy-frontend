@@ -8,6 +8,8 @@ export interface AiConfig {
   passDays: number;
   freeTries: number;
   trialMinutes: number;
+  /** Offer "renews automatically" (Razorpay Subscriptions) at checkout, next to paying once. */
+  autoRenewEnabled: boolean;
 }
 
 export type AiAccess = "pass" | "trial" | "trial_available" | "locked";
@@ -23,7 +25,14 @@ export interface AiMember {
   freeTriesUsed: number;
   freeTriesLeft: number;
   trialEndsAt?: string;
+  /** The free try's one export (print/PDF or CSV) is spent. */
+  trialExportUsed: boolean;
   passExpiresAt?: string;
+  /** Auto-renewal is on: Razorpay will charge again at `nextChargeAt`. */
+  autoRenew: boolean;
+  /** Razorpay's status for their subscription, or "" if they never had one. */
+  subscriptionStatus: string;
+  nextChargeAt?: string;
   lastLoginAt?: string;
   joinedAt?: string;
 }
@@ -53,7 +62,19 @@ export const AI_DEFAULT_CONFIG: AiConfig = {
   passDays: 365,
   freeTries: 1,
   trialMinutes: 60,
+  autoRenewEnabled: true,
 };
+
+/** An auto-renewing pass checkout in progress, as the paywall needs it. */
+export interface AiSubscriptionCheckout {
+  id: string;
+  testMode: boolean;
+  razorpayKeyId: string;
+  amount: number;
+  passName: string;
+  passDays: number;
+  buyer: { name: string; email: string };
+}
 
 /** 365 → "year", 730 → "2 years", 30 → "30 days" — reads as "₹999 / year". */
 export function passLength(days: number): string {

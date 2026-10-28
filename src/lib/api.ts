@@ -13,6 +13,8 @@ export interface AiOverview {
   buyers: number;
   activePasses: number;
   onTrial: number;
+  /** Members whose pass will be charged again automatically. */
+  autoRenewing: number;
   passesSold: number;
   revenue: number;
   revenueThisMonth: number;

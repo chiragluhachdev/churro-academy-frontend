@@ -10,11 +10,13 @@ import { cn, formatDate } from "@/lib/format";
 function StatusPill({ member }: { member: AiMember }) {
   const [label, tone] =
     member.access === "pass"
-      ? [`Pass active · till ${formatDate(member.passExpiresAt!)}`, "bg-forest/10 text-forest"]
+      ? member.autoRenew
+        ? [`Auto-renews ${formatDate(member.nextChargeAt ?? member.passExpiresAt!)}`, "bg-forest/10 text-forest"]
+        : [`Pass active · till ${formatDate(member.passExpiresAt!)}`, "bg-forest/10 text-forest"]
       : member.access === "trial"
         ? ["Free try running", "bg-[var(--color-gold)]/20 text-ink"]
         : member.access === "trial_available"
-          ? [`${member.freeTriesLeft} free ${member.freeTriesLeft === 1 ? "try" : "tries"} left`, "bg-pill text-ink"]
+          ? ["Free try available", "bg-pill text-ink"]
           : ["Free try used", "bg-line/60 text-muted"];
   return <span className={cn("rounded-full px-3 py-1 text-[0.72rem] font-medium", tone)}>{label}</span>;
 }

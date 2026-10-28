@@ -13,16 +13,26 @@ export interface RazorpaySuccessResponse {
   razorpay_signature: string;
 }
 
-interface RazorpayOptions {
+/** A subscription checkout's callback carries the subscription id in place of an order id. */
+export interface RazorpaySubscriptionSuccessResponse {
+  razorpay_payment_id: string;
+  razorpay_subscription_id: string;
+  razorpay_signature: string;
+}
+
+interface RazorpayOptions<R = RazorpaySuccessResponse> {
   key: string;
-  amount: number;
-  currency: string;
+  amount?: number;
+  currency?: string;
   name: string;
   description?: string;
-  order_id: string;
+  /** One-time payment: the Razorpay order. */
+  order_id?: string;
+  /** Auto-renewal: the Razorpay subscription (amount comes from its plan). */
+  subscription_id?: string;
   prefill?: { name?: string; email?: string; contact?: string };
   theme?: { color?: string };
-  handler: (response: RazorpaySuccessResponse) => void;
+  handler: (response: R) => void;
   modal?: { ondismiss?: () => void };
 }
 
@@ -37,7 +47,7 @@ interface RazorpayInstance {
 
 declare global {
   interface Window {
-    Razorpay?: new (options: RazorpayOptions) => RazorpayInstance;
+    Razorpay?: new (options: RazorpayOptions<never>) => RazorpayInstance;
   }
 }
 
@@ -78,13 +88,13 @@ export function loadRazorpayScript(): Promise<void> {
  * anything. `options.modal.ondismiss` is the single source of truth for when
  * the widget actually closes, success or not.
  */
-export async function openRazorpayCheckout(
-  options: RazorpayOptions,
+export async function openRazorpayCheckout<R = RazorpaySuccessResponse>(
+  options: RazorpayOptions<R>,
   onFailure?: (response: RazorpayFailureResponse) => void,
 ): Promise<void> {
   await loadRazorpayScript();
   if (!window.Razorpay) throw new Error("Payment widget failed to load.");
-  const instance = new window.Razorpay(options);
+  const instance = new window.Razorpay(options as RazorpayOptions<never>);
   if (onFailure) instance.on("payment.failed", onFailure);
   instance.open();
 }

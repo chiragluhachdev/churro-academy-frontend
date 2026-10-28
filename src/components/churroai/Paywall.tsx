@@ -3,12 +3,20 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Check, Loader2, Lock, ShieldCheck } from "lucide-react";
+import { Check, Loader2, Lock, RefreshCw, ShieldCheck, Wallet } from "lucide-react";
 
-import { confirmPassAction, startPassOrderAction, type RazorpayResult } from "@/app/actions/churroai";
+import {
+  confirmPassAction,
+  confirmSubscriptionAction,
+  startPassOrderAction,
+  startSubscriptionAction,
+  type RazorpayResult,
+} from "@/app/actions/churroai";
 import { passLength, type AiConfig, type AiMember } from "@/lib/churroaiShared";
-import { formatPrice } from "@/lib/format";
-import { openRazorpayCheckout } from "@/lib/razorpay";
+import { cn, formatPrice } from "@/lib/format";
+import { openRazorpayCheckout, type RazorpaySubscriptionSuccessResponse } from "@/lib/razorpay";
+
+type Plan = "auto" | "once";
 
 const inputClass =
   "w-full rounded-xl border border-line/60 bg-white px-4 py-3 text-[0.95rem] text-ink transition-colors placeholder:text-muted/50 focus:border-forest/50 focus:outline-none";
@@ -27,11 +35,12 @@ export function Paywall({
   const router = useRouter();
   const [name, setName] = useState(member.name);
   const [email, setEmail] = useState(member.email);
+  const [plan, setPlan] = useState<Plan>(config.autoRenewEnabled ? "auto" : "once");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const period = passLength(config.passDays);
 
-  async function finish(orderId: string, razorpay?: RazorpayResult) {
-    const res = await confirmPassAction(orderId, razorpay);
+  async function settle(res: { ok: true } | { ok: false; error: string }) {
     if (!res.ok) {
       setError(res.error);
       setBusy(false);
@@ -40,6 +49,10 @@ export function Paywall({
     router.refresh();
   }
 
+  const finish = async (orderId: string, razorpay?: RazorpayResult) => settle(await confirmPassAction(orderId, razorpay));
+  const finishSubscription = async (razorpay?: RazorpaySubscriptionSuccessResponse) =>
+    settle(await confirmSubscriptionAction(razorpay));
+
   async function pay(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
@@ -47,6 +60,7 @@ export function Paywall({
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return setError("Enter a valid email. Your invoice goes there.");
 
     setBusy(true);
+    if (plan === "auto") return subscribe();
     const started = await startPassOrderAction({ name: name.trim(), email: email.trim() });
     if (!started.ok) {
       setError(started.error);
@@ -86,6 +100,45 @@ export function Paywall({
     }
   }
 
+  /** Auto-renewal: the buyer approves a UPI Autopay or card mandate once, and the first charge is taken now. */
+  async function subscribe() {
+    const started = await startSubscriptionAction({ name: name.trim(), email: email.trim() });
+    if (!started.ok) {
+      setError(started.error);
+      setBusy(false);
+      return;
+    }
+    const sub = started.data;
+    if (sub.testMode) return void finishSubscription();
+
+    let paid = false;
+    try {
+      await openRazorpayCheckout<RazorpaySubscriptionSuccessResponse>(
+        {
+          key: sub.razorpayKeyId,
+          subscription_id: sub.id,
+          name: "Churro AI",
+          description: `${sub.passName}, renews every ${passLength(sub.passDays)}`,
+          prefill: { name: sub.buyer.name, email: sub.buyer.email },
+          theme: { color: "#294B32" },
+          handler: (response) => {
+            paid = true;
+            void finishSubscription(response);
+          },
+          modal: {
+            ondismiss: () => {
+              if (!paid) setBusy(false);
+            },
+          },
+        },
+        (failure) => setError(failure.error.description || "The payment didn't go through. You can try again."),
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't open the payment window.");
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="border-line/70 mx-auto grid max-w-4xl overflow-hidden rounded-3xl border bg-[#fffdf9] shadow-[0_40px_90px_-50px_rgba(22,59,41,0.55)] md:grid-cols-[1fr_1.05fr]">
       <div className="bg-forest-deep text-cream relative overflow-hidden p-8 sm:p-10">
@@ -99,12 +152,14 @@ export function Paywall({
             {formatPrice(config.passPrice)}
             <span className="text-cream/60 font-sans text-[1rem] font-normal"> / {passLength(config.passDays)}</span>
           </p>
-          <p className="text-cream/60 mt-2 text-[0.82rem]">One payment, GST included. No auto-renewal.</p>
+          <p className="text-cream/60 mt-2 text-[0.82rem]">
+            {plan === "auto" ? `GST included. Renews every ${period}, cancel anytime.` : "One payment, GST included. No auto-renewal."}
+          </p>
           <ul className="mt-8 space-y-3 text-[0.92rem]">
             {[
               "Unlimited use of the Recipe Cost Calculator",
               "Print, PDF and CSV export",
-              "Sign in from any device with your number",
+              "Sign in from any device with your email",
               "GST invoice by email",
             ].map((item) => (
               <li key={item} className="flex items-start gap-2.5">
@@ -121,6 +176,41 @@ export function Paywall({
           <h2 className="font-display text-ink text-[1.6rem] leading-tight font-medium">{heading}</h2>
           <p className="text-muted mt-2 text-[0.92rem] leading-relaxed">{lede}</p>
         </div>
+        {config.autoRenewEnabled && (
+          <fieldset className="grid gap-2.5 sm:grid-cols-2">
+            <legend className="text-ink mb-2 text-[0.85rem] font-medium">How would you like to pay?</legend>
+            {(
+              [
+                { value: "auto", icon: RefreshCw, title: "Auto-renew", note: `Charged every ${period}. Cancel anytime.` },
+                { value: "once", icon: Wallet, title: "Pay once", note: `Covers ${period === "year" ? "one year" : period}, then it simply ends.` },
+              ] as const
+            ).map((option) => (
+              <label
+                key={option.value}
+                className={cn(
+                  "flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition-colors",
+                  plan === option.value ? "border-forest bg-forest/5" : "border-line/70 hover:border-forest/40",
+                )}
+              >
+                <input
+                  type="radio"
+                  name="plan"
+                  value={option.value}
+                  checked={plan === option.value}
+                  onChange={() => setPlan(option.value)}
+                  className="accent-forest mt-1"
+                />
+                <span>
+                  <span className="text-ink flex items-center gap-1.5 text-[0.9rem] font-medium">
+                    <option.icon className="text-forest size-3.5" strokeWidth={2} />
+                    {option.title}
+                  </span>
+                  <span className="text-muted mt-0.5 block text-[0.78rem] leading-snug">{option.note}</span>
+                </span>
+              </label>
+            ))}
+          </fieldset>
+        )}
         <label className="block space-y-2">
           <span className="text-ink block text-[0.85rem] font-medium">Name for the invoice</span>
           <input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" className={inputClass} />
@@ -143,11 +233,13 @@ export function Paywall({
           className="bg-forest text-cream hover:bg-forest-deep flex w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 text-[0.95rem] font-medium transition-colors disabled:opacity-70"
         >
           {busy && <Loader2 className="size-4 animate-spin" />}
-          Pay {formatPrice(config.passPrice)}
+          {plan === "auto" ? `Start auto-renew · ${formatPrice(config.passPrice)} / ${period}` : `Pay ${formatPrice(config.passPrice)}`}
         </button>
-        <p className="text-muted flex items-center justify-center gap-1.5 text-[0.75rem]">
-          <ShieldCheck className="size-3.5" />
-          Secure payment by Razorpay
+        <p className="text-muted flex items-center justify-center gap-1.5 text-center text-[0.75rem]">
+          <ShieldCheck className="size-3.5 shrink-0" />
+          {plan === "auto"
+            ? "Secure UPI Autopay or card mandate by Razorpay. You're told before each charge."
+            : "Secure payment by Razorpay"}
         </p>
       </form>
     </div>

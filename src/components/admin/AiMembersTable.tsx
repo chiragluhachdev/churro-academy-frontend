@@ -19,6 +19,10 @@ const ACTIONS = {
   grant: { label: "Give pass", confirm: "Give this member a free pass?" },
   revoke: { label: "Remove access", confirm: "End this member's pass and any free try running now? Their payments stay in Billing." },
   "reset-trial": { label: "Reset free try", confirm: "Give this member their free tries back?" },
+  "stop-renewal": {
+    label: "Stop auto-renew",
+    confirm: "Stop this member's auto-renewal? They keep the period already paid for and won't be charged again.",
+  },
 } as const;
 
 type Action = keyof typeof ACTIONS;
@@ -27,6 +31,7 @@ type Action = keyof typeof ACTIONS;
 function applicableActions(m: AiMember): Action[] {
   const actions: Action[] = ["grant"];
   if (m.freeTriesUsed > 0) actions.push("reset-trial");
+  if (m.autoRenew) actions.push("stop-renewal");
   if (m.access === "pass" || m.access === "trial") actions.push("revoke");
   return actions;
 }
@@ -56,7 +61,7 @@ export function AiMembersTable({ members, empty }: { members: AiMember[]; empty?
         <table className="w-full text-left text-sm whitespace-nowrap">
           <thead className="bg-forest/5 text-muted border-line/50 border-b">
             <tr>
-              {["Member", "Status", "Free tries", "Pass until", "Last sign-in", "Joined", ""].map((h) => (
+              {["Member", "Status", "Free try", "Pass until", "Last sign-in", "Joined", ""].map((h) => (
                 <th key={h} className="px-6 py-4 text-[0.75rem] font-medium tracking-wider uppercase">
                   {h}
                 </th>
@@ -80,9 +85,19 @@ export function AiMembersTable({ members, empty }: { members: AiMember[]; empty?
                     <span className={cn("rounded-full px-2.5 py-1 text-[0.72rem] font-medium", tone)}>{label}</span>
                   </td>
                   <td className="text-muted px-6 py-4 text-[0.85rem]">
-                    {m.freeTriesUsed} used · {m.freeTriesLeft} left
+                    {m.access === "trial" && m.trialEndsAt
+                      ? `Running · ends ${new Date(m.trialEndsAt).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })}`
+                      : m.freeTriesUsed > 0
+                        ? "Used"
+                        : "Not used yet"}
                   </td>
-                  <td className="text-muted px-6 py-4 text-[0.85rem]">{m.passExpiresAt ? formatDate(m.passExpiresAt) : "—"}</td>
+                  <td className="text-muted px-6 py-4 text-[0.85rem]">
+                    {m.passExpiresAt ? formatDate(m.passExpiresAt) : "—"}
+                    {m.autoRenew && <span className="text-forest block text-[0.72rem] font-medium">Auto-renews</span>}
+                    {m.subscriptionStatus === "pending" && (
+                      <span className="block text-[0.72rem] font-medium text-[var(--color-gold)]">Renewal payment failed</span>
+                    )}
+                  </td>
                   <td className="text-muted px-6 py-4 text-[0.85rem]">{m.lastLoginAt ? formatDate(m.lastLoginAt) : "—"}</td>
                   <td className="text-muted px-6 py-4 text-[0.85rem]">{m.joinedAt ? formatDate(m.joinedAt) : "—"}</td>
                   <td className="px-6 py-4">

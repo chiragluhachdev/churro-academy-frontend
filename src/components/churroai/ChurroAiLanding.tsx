@@ -34,6 +34,7 @@ export interface Pricing {
   passPrice: number;
   passDays: number;
   trialMinutes: number;
+  autoRenewEnabled: boolean;
 }
 
 /** `live` = the calculator is switched on; `label` fits the visitor ("Try it free" / "Open Recipe Calculator"). */
@@ -554,7 +555,7 @@ function faqs(pricing: Pricing) {
     },
     {
       q: "How much does it cost?",
-      a: `Your first try is free: ${formatTrialLength(pricing.trialMinutes)} with the full calculator. After that, the ${pricing.passName} is ${formatPrice(pricing.passPrice)} a ${passLength(pricing.passDays)}, paid once through Razorpay, with a GST invoice by email. It doesn't renew on its own.`,
+      a: `Your first try is free: ${formatTrialLength(pricing.trialMinutes)} with the full calculator. After that, the ${pricing.passName} is ${formatPrice(pricing.passPrice)} a ${passLength(pricing.passDays)}, paid through Razorpay with a GST invoice by email. ${pricing.autoRenewEnabled ? "Choose auto-renew to be charged automatically each period (cancel anytime), or pay once and it simply ends." : "It doesn't renew on its own."}`,
     },
     {
       q: "How do I sign in?",

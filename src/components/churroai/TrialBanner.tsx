@@ -1,13 +1,11 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
 import { Timer } from "lucide-react";
 
 import { passLength, type AiConfig } from "@/lib/churroaiShared";
-import { formatPrice } from "@/lib/format";
+import { cn, formatPrice } from "@/lib/format";
 
-function remaining(ms: number) {
+export function formatCountdown(ms: number) {
   const total = Math.max(0, Math.floor(ms / 1000));
   const h = Math.floor(total / 3600);
   const m = Math.floor((total % 3600) / 60);
@@ -16,36 +14,24 @@ function remaining(ms: number) {
   return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
 }
 
-/**
- * Counts the free try down and, when it hits zero, re-asks the server — which
- * then shows the paywall instead of the calculator. The clock only starts
- * after mount, so the server and browser never render different numbers.
- */
-export function TrialBanner({ endsAt, config, onUpgrade }: { endsAt: string; config: AiConfig; onUpgrade: () => void }) {
-  const router = useRouter();
-  const [now, setNow] = useState<number | null>(null);
-  const end = new Date(endsAt).getTime();
-
-  useEffect(() => {
-    const tick = () => setNow(Date.now());
-    const first = setTimeout(tick, 0);
-    const every = setInterval(tick, 1000);
-    return () => {
-      clearTimeout(first);
-      clearInterval(every);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (now !== null && now >= end) router.refresh();
-  }, [now, end, router]);
-
+/** The free try's countdown strip. `left` is null until mounted, so server and browser render the same thing. */
+export function TrialBanner({ left, config, onUpgrade }: { left: number | null; config: AiConfig; onUpgrade: () => void }) {
+  const ending = left !== null && left <= 5 * 60_000;
   return (
-    <div className="border-[var(--color-gold)]/40 bg-[var(--color-gold)]/12 flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-5 py-3.5 print:hidden">
+    <div
+      className={cn(
+        "flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-5 py-3.5 transition-colors print:hidden",
+        ending ? "border-red-200 bg-red-50" : "border-[var(--color-gold)]/40 bg-[var(--color-gold)]/12",
+      )}
+    >
       <p className="text-ink flex items-center gap-2.5 text-[0.9rem]">
-        <Timer className="size-4 shrink-0 text-[var(--color-gold)]" strokeWidth={1.8} />
+        <Timer className={cn("size-4 shrink-0", ending ? "text-red-600" : "text-[var(--color-gold)]")} strokeWidth={1.8} />
         <span>
-          Free try · <span className="font-mono font-semibold tabular-nums">{now === null ? "--:--" : remaining(end - now)}</span> left
+          Free try ·{" "}
+          <span className={cn("font-mono font-semibold tabular-nums", ending && "text-red-600")}>
+            {left === null ? "--:--" : formatCountdown(left)}
+          </span>{" "}
+          left
         </span>
       </p>
       <button

@@ -183,8 +183,8 @@ export default async function AdminChurroAiPage({
               </span>
             </div>
             <p className="text-muted mt-2 text-[0.95rem]">
-              {formatPrice(settings.passPrice)} / {passLength(settings.passDays)} · {settings.freeTries} free{" "}
-              {settings.freeTries === 1 ? "try" : "tries"} of {settings.trialMinutes} min. Members sign in by email.
+              {formatPrice(settings.passPrice)} / {passLength(settings.passDays)} · one {settings.trialMinutes}-minute free try
+              per email. Members sign in by email.
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               <HealthChip
@@ -217,7 +217,7 @@ export default async function AdminChurroAiPage({
             icon={CalendarClock}
             label="Active passes"
             value={String(o.activePasses)}
-            note={`${o.onTrial} on a free try right now`}
+            note={`${o.autoRenewing} auto-renewing · ${o.onTrial} on a free try`}
           />
           <StatTile
             icon={TrendingUp}

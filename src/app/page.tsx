@@ -41,6 +41,7 @@ export default async function HomePage() {
         passPrice: config.passPrice,
         passDays: config.passDays,
         trialMinutes: config.trialMinutes,
+        autoRenewEnabled: config.autoRenewEnabled,
       }}
       signedIn={Boolean(member)}
     />

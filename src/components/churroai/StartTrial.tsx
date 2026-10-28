@@ -8,7 +8,7 @@ import { startTrialAction } from "@/app/actions/churroai";
 import { formatTrialLength, passLength, type AiConfig } from "@/lib/churroaiShared";
 import { formatPrice } from "@/lib/format";
 
-export function StartTrial({ config, triesLeft }: { config: AiConfig; triesLeft: number }) {
+export function StartTrial({ config }: { config: AiConfig }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -27,8 +27,7 @@ export function StartTrial({ config, triesLeft }: { config: AiConfig; triesLeft:
         start when you have your numbers ready.
       </p>
       <p className="text-muted mt-2 text-[0.82rem]">
-        {triesLeft} free {triesLeft === 1 ? "try" : "tries"} left · then {formatPrice(config.passPrice)} a{" "}
-        {passLength(config.passDays)}
+        One free try per email · then {formatPrice(config.passPrice)} / {passLength(config.passDays)}
       </p>
       {error && <p className="mt-4 text-[0.85rem] text-red-600">{error}</p>}
       <button

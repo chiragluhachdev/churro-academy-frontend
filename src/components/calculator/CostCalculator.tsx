@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import {
   Calculator,
   Download,
+  Lock,
   Percent,
   Plus,
   Printer,
@@ -50,6 +51,23 @@ const DEFAULTS = {
   actualSellingPrice: 0,
 };
 
+/**
+ * The recipe in progress, kept for this browser tab only (it never leaves the
+ * device). Paying mid free try reloads the page, and nobody should have to
+ * type their recipe in twice.
+ */
+const STORE_KEY = "churroai:calculator";
+type Saved = typeof DEFAULTS;
+
+function readSaved(): Partial<Saved> | null {
+  try {
+    const raw = sessionStorage.getItem(STORE_KEY);
+    return raw ? (JSON.parse(raw) as Partial<Saved>) : null;
+  } catch {
+    return null;
+  }
+}
+
 function costUsed(ing: Ingredient): number {
   if (!ing.purchaseQty) return 0;
   return (ing.qtyUsed / ing.purchaseQty) * ing.purchasePrice;
@@ -63,7 +81,18 @@ function csvCell(value: string | number): string {
   return `"${String(value).replace(/"/g, '""')}"`;
 }
 
-export function CostCalculator() {
+/**
+ * Free-try limits on exporting. `used` is the try's one export already spent;
+ * `claim` spends it (resolving true if allowed); `onLocked` is where a
+ * spent export sends them — the pass. Omitted for pass holders: no limits.
+ */
+export interface ExportGate {
+  used: boolean;
+  claim: () => Promise<boolean>;
+  onLocked: () => void;
+}
+
+export function CostCalculator({ exportGate }: { exportGate?: ExportGate } = {}) {
   const [ingredients, setIngredients] = useState<Ingredient[]>(DEFAULTS.ingredients);
   const [originalYield, setOriginalYield] = useState(DEFAULTS.originalYield);
   const [targetYield, setTargetYield] = useState(DEFAULTS.targetYield);
@@ -74,6 +103,88 @@ export function CostCalculator() {
   const [otherCost, setOtherCost] = useState(DEFAULTS.otherCost);
   const [targetMargin, setTargetMargin] = useState(DEFAULTS.targetMargin);
   const [actualSellingPrice, setActualSellingPrice] = useState(DEFAULTS.actualSellingPrice);
+  const [restored, setRestored] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  // During a free try the sheet only prints through the button below, so the browser's own Print can't skip the limit.
+  const [printing, setPrinting] = useState(false);
+
+  useEffect(() => {
+    const done = () => setPrinting(false);
+    window.addEventListener("afterprint", done);
+    return () => window.removeEventListener("afterprint", done);
+  }, []);
+
+  /** Runs an export, spending the free try's one export first when there's a limit. */
+  async function gated(run: () => void) {
+    if (!exportGate) return run();
+    if (exportGate.used) return exportGate.onLocked();
+    setExporting(true);
+    const ok = await exportGate.claim();
+    setExporting(false);
+    if (ok) run();
+  }
+
+  function printSheet() {
+    if (!exportGate) return window.print();
+    setPrinting(true);
+    // Let React drop the print guard before the print dialog snapshots the page.
+    setTimeout(() => window.print(), 50);
+  }
+
+  // Restore after mount, so the server's render and the first browser render match.
+  useEffect(() => {
+    const restore = setTimeout(() => {
+      const saved = readSaved();
+      if (saved) {
+        if (Array.isArray(saved.ingredients)) setIngredients(saved.ingredients);
+        const num = (v: unknown, set: (n: number) => void) => typeof v === "number" && Number.isFinite(v) && set(v);
+        num(saved.originalYield, setOriginalYield);
+        num(saved.targetYield, setTargetYield);
+        num(saved.wastagePct, setWastagePct);
+        num(saved.packagingPerPiece, setPackagingPerPiece);
+        num(saved.labourCost, setLabourCost);
+        num(saved.electricityCost, setElectricityCost);
+        num(saved.otherCost, setOtherCost);
+        num(saved.targetMargin, setTargetMargin);
+        num(saved.actualSellingPrice, setActualSellingPrice);
+      }
+      setRestored(true);
+    }, 0);
+    return () => clearTimeout(restore);
+  }, []);
+
+  useEffect(() => {
+    if (!restored) return;
+    const saved: Saved = {
+      ingredients,
+      originalYield,
+      targetYield,
+      wastagePct,
+      packagingPerPiece,
+      labourCost,
+      electricityCost,
+      otherCost,
+      targetMargin,
+      actualSellingPrice,
+    };
+    try {
+      sessionStorage.setItem(STORE_KEY, JSON.stringify(saved));
+    } catch {
+      // Private mode or storage full: the calculator still works, it just won't remember.
+    }
+  }, [
+    restored,
+    ingredients,
+    originalYield,
+    targetYield,
+    wastagePct,
+    packagingPerPiece,
+    labourCost,
+    electricityCost,
+    otherCost,
+    targetMargin,
+    actualSellingPrice,
+  ]);
 
   const setIngredient = (id: string, patch: Partial<Ingredient>) =>
     setIngredients((prev) => prev.map((i) => (i.id === id ? { ...i, ...patch } : i)));
@@ -178,9 +289,17 @@ export function CostCalculator() {
     URL.revokeObjectURL(url);
   }
 
+  const printBlocked = Boolean(exportGate) && !printing;
+
   return (
     <section className="bg-cream">
-      <div className="mx-auto max-w-[1400px] px-5 py-14 sm:px-8 lg:py-16">
+      {printBlocked && (
+        <p className="hidden p-10 text-center text-[14pt] print:block">
+          Printing during the free try works through the &ldquo;Print / Save as PDF&rdquo; button, once. Get the Churro AI
+          pass for unlimited printing.
+        </p>
+      )}
+      <div className={cn("mx-auto max-w-[1400px] px-5 py-14 sm:px-8 lg:py-16", printBlocked && "print:hidden")}>
         <div className="lg:grid lg:grid-cols-[1fr_380px] lg:items-start lg:gap-12 xl:gap-16">
           {/* Left column */}
           <div className="space-y-8">
@@ -476,21 +595,36 @@ export function CostCalculator() {
             <Reveal delay={0.1} className="print:hidden">
               <div className="border-line/70 bg-cream-warm rounded-2xl border p-6 sm:p-7">
                 <h2 className="text-ink text-[1.05rem] font-semibold">Actions</h2>
+                {exportGate && (
+                  <p
+                    className={cn(
+                      "mt-2 flex items-center gap-1.5 text-[0.78rem]",
+                      exportGate.used ? "text-muted" : "text-ink/70",
+                    )}
+                  >
+                    {exportGate.used && <Lock className="size-3.5 shrink-0" />}
+                    {exportGate.used
+                      ? "Your free try's one export is used. Get the pass for unlimited exports."
+                      : "Your free try includes one export: print, PDF or CSV."}
+                  </p>
+                )}
                 <div className="mt-4 space-y-2.5">
                   <button
                     type="button"
-                    onClick={() => window.print()}
-                    className="bg-forest text-cream hover:bg-forest-deep flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-[0.85rem] font-medium transition-colors"
+                    disabled={exporting}
+                    onClick={() => gated(printSheet)}
+                    className="bg-forest text-cream hover:bg-forest-deep flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-[0.85rem] font-medium transition-colors disabled:opacity-60"
                   >
-                    <Printer className="size-4" />
+                    {exportGate?.used ? <Lock className="size-4" /> : <Printer className="size-4" />}
                     Print / Save as PDF
                   </button>
                   <button
                     type="button"
-                    onClick={exportCsv}
-                    className="border-forest/25 text-forest hover:bg-forest/5 flex w-full items-center justify-center gap-2 rounded-full border px-5 py-3 text-[0.85rem] font-medium transition-colors"
+                    disabled={exporting}
+                    onClick={() => gated(exportCsv)}
+                    className="border-forest/25 text-forest hover:bg-forest/5 flex w-full items-center justify-center gap-2 rounded-full border px-5 py-3 text-[0.85rem] font-medium transition-colors disabled:opacity-60"
                   >
-                    <Download className="size-4" />
+                    {exportGate?.used ? <Lock className="size-4" /> : <Download className="size-4" />}
                     Export as CSV
                   </button>
                   <button

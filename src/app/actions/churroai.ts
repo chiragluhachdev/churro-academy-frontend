@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 
 import { ApiError, api } from "@/lib/api";
 import { AI_SESSION_COOKIE, getAiToken } from "@/lib/churroai";
-import type { AiMember, AiPassOrder } from "@/lib/churroaiShared";
+import type { AiMember, AiPassOrder, AiSubscriptionCheckout } from "@/lib/churroaiShared";
 
 type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 
@@ -82,5 +82,46 @@ export async function confirmPassAction(orderId: string, razorpay?: RazorpayResu
         (r) => r.member,
       ),
     "Payment couldn't be confirmed. If money left your account, message us and we'll sort it out.",
+  );
+}
+
+export async function startSubscriptionAction(buyer: { name: string; email: string }): Promise<Result<AiSubscriptionCheckout>> {
+  return asMember(
+    (token) =>
+      api<{ subscription: AiSubscriptionCheckout }>("/ai/subscriptions", { method: "POST", token, body: buyer }).then(
+        (r) => r.subscription,
+      ),
+    "Couldn't start auto-renewal. Please try again, or choose “Pay once”.",
+  );
+}
+
+export interface RazorpaySubscriptionResult {
+  razorpay_payment_id: string;
+  razorpay_subscription_id: string;
+  razorpay_signature: string;
+}
+
+export async function confirmSubscriptionAction(razorpay?: RazorpaySubscriptionResult): Promise<Result<AiMember>> {
+  return asMember(
+    (token) =>
+      api<{ member: AiMember }>("/ai/subscriptions/confirm", { method: "POST", token, body: razorpay ?? {} }).then(
+        (r) => r.member,
+      ),
+    "Payment couldn't be confirmed. If money left your account, message us and we'll sort it out.",
+  );
+}
+
+export async function cancelAutoRenewAction(): Promise<Result<AiMember>> {
+  return asMember(
+    (token) => api<{ member: AiMember }>("/ai/subscriptions/cancel", { method: "POST", token }).then((r) => r.member),
+    "Couldn't turn off auto-renewal. Please try again.",
+  );
+}
+
+/** Spends the free try's one export. */
+export async function claimTrialExportAction(): Promise<Result<AiMember>> {
+  return asMember(
+    (token) => api<{ member: AiMember }>("/ai/trial/export", { method: "POST", token }).then((r) => r.member),
+    "Couldn't start the export. Please try again.",
   );
 }

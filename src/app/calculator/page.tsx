@@ -5,6 +5,7 @@ import { ArrowLeft, Clock } from "lucide-react";
 
 import { CostCalculator } from "@/components/calculator/CostCalculator";
 import { AppShell } from "@/components/churroai/AppShell";
+import { MembershipBar } from "@/components/churroai/MembershipBar";
 import { Paywall } from "@/components/churroai/Paywall";
 import { StartTrial } from "@/components/churroai/StartTrial";
 import { TrialWorkspace } from "@/components/churroai/TrialWorkspace";
@@ -73,6 +74,7 @@ export default async function ChurroAiCalculatorPage() {
       {member.access === "pass" && (
         <>
           <Title />
+          <MembershipBar config={config} member={member} />
           <CostCalculator />
         </>
       )}
@@ -84,7 +86,7 @@ export default async function ChurroAiCalculatorPage() {
       )}
       {member.access === "trial_available" && (
         <div className="px-5 py-16 sm:px-8 sm:py-24">
-          <StartTrial config={config} triesLeft={member.freeTriesLeft} />
+          <StartTrial config={config} />
         </div>
       )}
       {member.access === "locked" && (

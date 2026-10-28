@@ -127,7 +127,7 @@ export async function saveAiSettingsAction(input: AiConfig) {
 }
 
 /** grant = one free pass length · revoke = end the pass and any running try · reset-trial = give free tries back. */
-export async function aiMemberAction(memberId: string, action: "grant" | "revoke" | "reset-trial") {
+export async function aiMemberAction(memberId: string, action: "grant" | "revoke" | "reset-trial" | "stop-renewal") {
   return run(null, (token) => api(`/admin/ai/members/${memberId}/${action}`, { method: "POST", token }));
 }
 
