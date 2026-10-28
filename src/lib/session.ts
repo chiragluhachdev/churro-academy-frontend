@@ -11,14 +11,15 @@ export type SessionUser = {
   image?: string | null;
 };
 
-export type Session = { user: SessionUser; accessToken: string };
+export type Session = { user: SessionUser; accessToken: string; endsAt: number };
 
 export async function getSession(): Promise<Session | null> {
   const session = await auth();
   if (!session?.user) return null;
   return {
     user: session.user as SessionUser,
-    accessToken: (session as { accessToken?: string }).accessToken ?? "",
+    accessToken: session.accessToken ?? "",
+    endsAt: session.endsAt,
   };
 }
 

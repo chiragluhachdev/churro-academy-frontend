@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+
+import { auth } from "@/auth";
 
 /**
  * Cheap gate, run before every request: bounces anonymous visitors away from
  * the admin area, and — when the admin has flipped maintenance mode on —
- * swaps every public page for the "we'll be back soon" one. Role (for the
- * admin gate) and the maintenance flag itself both live in the database, so
- * this talks to the backend directly rather than relying on shared modules,
- * per Next's own guidance for proxy files.
+ * swaps every public page for the "we'll be back soon" one. Wrapped in
+ * `auth` so an admin sign-in older than 10 minutes counts as signed out here
+ * too (and its cookie is cleared), not just a cookie that happens to exist.
+ * The maintenance flag lives in the database, so that's fetched directly.
  */
-const SESSION_COOKIES = ["authjs.session-token", "__Secure-authjs.session-token"];
 
 const API_URL = process.env.API_URL ?? "http://localhost:4000";
 
@@ -31,9 +31,9 @@ async function isMaintenanceOn(): Promise<boolean> {
   }
 }
 
-export async function proxy(request: NextRequest) {
+export const proxy = auth(async (request) => {
   const { pathname } = request.nextUrl;
-  const signedIn = SESSION_COOKIES.some((name) => request.cookies.has(name));
+  const signedIn = Boolean(request.auth?.user);
 
   const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
   if (isAdminRoute && !signedIn) {
@@ -50,7 +50,7 @@ export async function proxy(request: NextRequest) {
   }
 
   return NextResponse.next();
-}
+});
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)"],

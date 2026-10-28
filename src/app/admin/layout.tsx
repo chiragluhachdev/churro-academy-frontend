@@ -5,6 +5,7 @@ import { ExternalLink, LogOut } from "lucide-react";
 
 import { logoutAction } from "@/app/actions/auth";
 import { AdminSidebarNav, AdminTabs } from "@/components/admin/AdminNav";
+import { SessionTimer } from "@/components/admin/SessionTimer";
 import { requireAdmin } from "@/lib/session";
 
 export const metadata: Metadata = {
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { user } = await requireAdmin();
+  const { user, endsAt } = await requireAdmin();
 
   const brand = (
     <Link href="/admin" className="flex items-center gap-3">
@@ -54,6 +55,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </Link>
           {signOut}
           <p className="text-cream/45 truncate px-4 pt-2 text-[0.72rem]">{user.email}</p>
+          <SessionTimer endsAt={endsAt} className="px-4" />
         </div>
       </aside>
 
@@ -62,6 +64,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <div className="flex items-center justify-between">
           {brand}
           <div className="flex items-center gap-1">
+            <SessionTimer endsAt={endsAt} className="mr-1" />
             <Link href="/" target="_blank" aria-label="View site" className="hover:bg-forest rounded-full p-2.5">
               <ExternalLink className="size-5" strokeWidth={1.6} />
             </Link>

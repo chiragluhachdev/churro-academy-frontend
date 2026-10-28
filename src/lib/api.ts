@@ -2,6 +2,26 @@ import type { AiConfig, AiMember } from "@/lib/churroaiShared";
 import type { Course, CurriculumModule } from "@/types/course";
 
 /** The numbers Admin → Churro AI leads with. */
+/** Admin → Churro AI's headline numbers and lists. */
+export interface AiOverview {
+  calculatorEnabled: boolean;
+  members: number;
+  newThisWeek: number;
+  /** Members who have started at least one free try. */
+  triedFree: number;
+  /** Members who have paid for a pass at least once. */
+  buyers: number;
+  activePasses: number;
+  onTrial: number;
+  passesSold: number;
+  revenue: number;
+  revenueThisMonth: number;
+  recentSales: { id: string; name: string; email: string; amount: number; paidAt?: string; invoiceNumber: string }[];
+  /** Passes running out in the next 14 days, soonest first. */
+  expiring: AiMember[];
+  providers: { email: "dummy" | "brevo"; payments: "dummy" | "razorpay" };
+}
+
 export interface AiAdminSummary {
   members: number;
   activePasses: number;
@@ -233,10 +253,15 @@ export const adminApi = {
     ),
   aiSettings: (token: string) =>
     api<{ settings: AiConfig }>("/admin/ai/settings", { token }).then((r) => r.settings),
-  aiMembers: (token: string, params?: { q?: string }) => {
-    const qs = params?.q ? `?q=${encodeURIComponent(params.q)}` : "";
+  aiMembers: (token: string, params?: { q?: string; status?: string }) => {
+    const search = new URLSearchParams();
+    if (params?.q) search.set("q", params.q);
+    if (params?.status) search.set("status", params.status);
+    const qs = search.size ? `?${search}` : "";
     return api<{ summary: AiAdminSummary; members: AiMember[] }>(`/admin/ai/members${qs}`, { token });
   },
+  aiOverview: (token: string) =>
+    api<{ overview: AiOverview }>("/admin/ai/overview", { token }).then((r) => r.overview),
   updateSiteSettings: (token: string, data: SiteSettings) =>
     api<{ site: SiteSettings }>("/admin/content/site", { method: "PUT", token, body: data }).then((r) => r.site),
   customers: (token: string, params?: { q?: string }) => {

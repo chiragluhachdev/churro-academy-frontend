@@ -24,8 +24,13 @@ declare module "next-auth" {
     };
     /** Backend JWT, forwarded on every API call made on this user's behalf. */
     accessToken: string;
+    /** Epoch ms when this sign-in stops working, however active the admin is. */
+    endsAt: number;
   }
 }
+
+/** Admin sign-ins last 10 minutes from the moment of login — activity doesn't extend them. */
+export const ADMIN_SESSION_MS = 10 * 60 * 1000;
 
 /**
  * Credentials are verified by the Express API — this app never sees a password
@@ -33,7 +38,7 @@ declare module "next-auth" {
  * server components can call the API as the signed-in user.
  */
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  session: { strategy: "jwt" },
+  session: { strategy: "jwt", maxAge: ADMIN_SESSION_MS / 1000 },
   pages: { signIn: "/login" },
   providers: [
     Credentials({
@@ -77,7 +82,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.username = u.username;
         token.role = u.role;
         token.accessToken = u.accessToken;
+        token.loginAt = Date.now();
       }
+      // Returning null ends the session. Tokens from before this limit have no
+      // loginAt, so they're ended too.
+      const loginAt = typeof token.loginAt === "number" ? token.loginAt : 0;
+      if (Date.now() - loginAt >= ADMIN_SESSION_MS) return null;
       // The profile page renames the account and hands back a fresh backend
       // token, since the username is baked into it.
       if (trigger === "update" && session?.user) {
@@ -92,6 +102,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       session.user.username = token.username as string;
       session.user.role = token.role as "student" | "admin";
       session.accessToken = token.accessToken as string;
+      session.endsAt = (token.loginAt as number) + ADMIN_SESSION_MS;
       return session;
     },
   },

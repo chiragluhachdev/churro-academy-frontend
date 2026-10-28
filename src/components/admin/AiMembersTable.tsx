@@ -31,7 +31,7 @@ function applicableActions(m: AiMember): Action[] {
   return actions;
 }
 
-export function AiMembersTable({ members }: { members: AiMember[] }) {
+export function AiMembersTable({ members, empty }: { members: AiMember[]; empty?: string }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [busy, setBusy] = useState<string | null>(null);
@@ -56,7 +56,7 @@ export function AiMembersTable({ members }: { members: AiMember[] }) {
         <table className="w-full text-left text-sm whitespace-nowrap">
           <thead className="bg-forest/5 text-muted border-line/50 border-b">
             <tr>
-              {["Member", "Status", "Free tries", "Pass until", "Joined", ""].map((h) => (
+              {["Member", "Status", "Free tries", "Pass until", "Last sign-in", "Joined", ""].map((h) => (
                 <th key={h} className="px-6 py-4 text-[0.75rem] font-medium tracking-wider uppercase">
                   {h}
                 </th>
@@ -83,6 +83,7 @@ export function AiMembersTable({ members }: { members: AiMember[] }) {
                     {m.freeTriesUsed} used · {m.freeTriesLeft} left
                   </td>
                   <td className="text-muted px-6 py-4 text-[0.85rem]">{m.passExpiresAt ? formatDate(m.passExpiresAt) : "—"}</td>
+                  <td className="text-muted px-6 py-4 text-[0.85rem]">{m.lastLoginAt ? formatDate(m.lastLoginAt) : "—"}</td>
                   <td className="text-muted px-6 py-4 text-[0.85rem]">{m.joinedAt ? formatDate(m.joinedAt) : "—"}</td>
                   <td className="px-6 py-4">
                     <div className="flex justify-end gap-1.5">
@@ -110,8 +111,8 @@ export function AiMembersTable({ members }: { members: AiMember[] }) {
             })}
             {members.length === 0 && (
               <tr>
-                <td colSpan={6} className="text-muted px-6 py-12 text-center">
-                  No members yet — they appear here the first time they sign in.
+                <td colSpan={7} className="text-muted px-6 py-12 text-center">
+                  {empty ?? "No members yet. They appear here the first time they sign in."}
                 </td>
               </tr>
             )}
