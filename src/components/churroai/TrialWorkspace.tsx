@@ -1,10 +1,11 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Timer, X } from "lucide-react";
 
-import { claimTrialExportAction } from "@/app/actions/churroai";
+import { claimTrialUseAction } from "@/app/actions/churroai";
 import { CostCalculator } from "@/components/calculator/CostCalculator";
 import { Paywall } from "@/components/churroai/Paywall";
 import { TrialBanner } from "@/components/churroai/TrialBanner";
@@ -21,29 +22,32 @@ const WARNINGS = [5 * 60_000, 60_000];
  */
 export function TrialWorkspace({ config, member }: { config: AiConfig; member: AiMember }) {
   const end = new Date(member.trialEndsAt!).getTime();
+  const router = useRouter();
   const [now, setNow] = useState<number | null>(null);
   const [showPass, setShowPass] = useState(false);
   // The most recent warning step shown (index into WARNINGS), so each pops once.
   const [warned, setWarned] = useState(-1);
   const [warningOpen, setWarningOpen] = useState(false);
+  const [calcUsed, setCalcUsed] = useState(member.trialCalcUsed);
   const [exportUsed, setExportUsed] = useState(member.trialExportUsed);
-  const [exportError, setExportError] = useState<string | null>(null);
+  const [useError, setUseError] = useState<string | null>(null);
 
   const openPass = () => {
     setShowPass(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  async function claimExport() {
-    setExportError(null);
-    const res = await claimTrialExportAction();
+  /** Spends the try's one calculation or export; a refusal means it's gone, so off to the pass. */
+  async function claim(use: "calculate" | "export") {
+    setUseError(null);
+    const markUsed = use === "calculate" ? setCalcUsed : setExportUsed;
+    const res = await claimTrialUseAction(use);
+    markUsed(true);
     if (!res.ok) {
-      setExportError(res.error);
-      setExportUsed(true);
+      setUseError(res.error);
       openPass();
       return false;
     }
-    setExportUsed(true);
     return true;
   }
 
@@ -57,6 +61,19 @@ export function TrialWorkspace({ config, member }: { config: AiConfig; member: A
       clearInterval(every);
     };
   }, []);
+
+  // Re-reads the try's end time every 30 seconds and when the tab comes back,
+  // so a length change in admin reaches a page that's already open.
+  useEffect(() => {
+    const sync = () => router.refresh();
+    const every = setInterval(sync, 30_000);
+    const onVisible = () => document.visibilityState === "visible" && sync();
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(every);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [router]);
 
   const left = now === null ? null : Math.max(0, end - now);
   const expired = left !== null && left <= 0;
@@ -96,11 +113,19 @@ export function TrialWorkspace({ config, member }: { config: AiConfig; member: A
         </div>
       )}
 
-      {exportError && (
-        <p className="mx-auto max-w-[1400px] px-5 pt-4 text-[0.85rem] text-red-600 sm:px-8 print:hidden">{exportError}</p>
+      {useError && (
+        <p className="mx-auto max-w-[1400px] px-5 pt-4 text-[0.85rem] text-red-600 sm:px-8 print:hidden">{useError}</p>
       )}
       <div inert={expired} aria-hidden={expired} className={expired ? "pointer-events-none blur-[3px] select-none" : undefined}>
-        <CostCalculator exportGate={{ used: exportUsed, claim: claimExport, onLocked: openPass }} />
+        <CostCalculator
+          limits={{
+            calcUsed,
+            exportUsed,
+            claimCalc: () => claim("calculate"),
+            claimExport: () => claim("export"),
+            onLocked: openPass,
+          }}
+        />
       </div>
 
       {/* Heads-up near the end. */}
@@ -126,9 +151,9 @@ export function TrialWorkspace({ config, member }: { config: AiConfig; member: A
               {minutesLeft} {minutesLeft === 1 ? "minute" : "minutes"} left in your free try
             </p>
             <p className="text-muted mt-1.5 text-[0.85rem] leading-relaxed">
-              {exportUsed
-                ? "Get the pass to keep going without a break."
-                : "Use your one export (print, PDF or CSV) now, or get the pass to keep going without a break."}
+              {calcUsed && !exportUsed
+                ? "Use your one export (print, PDF or CSV) now, or get the pass to keep going without a break."
+                : "Get the pass to keep going without a break."}
             </p>
             <button
               type="button"

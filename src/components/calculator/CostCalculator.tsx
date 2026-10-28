@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import {
   Calculator,
   Download,
+  Loader2,
   Lock,
   Percent,
   Plus,
@@ -17,8 +18,9 @@ import {
 import { Reveal } from "@/components/ui/Reveal";
 import { cn, formatPricePrecise } from "@/lib/format";
 
+// No up/down arrows on number boxes: numbers are typed, not nudged.
 const inputClass =
-  "w-full rounded-xl border border-line/60 bg-cream px-3.5 py-2.5 text-[0.86rem] text-ink transition-colors placeholder:text-muted/50 focus:border-forest/50 focus:outline-none";
+  "w-full rounded-xl border border-line/60 bg-cream px-3.5 py-2.5 text-[0.86rem] text-ink transition-colors placeholder:text-muted/50 focus:border-forest/50 focus:outline-none disabled:cursor-not-allowed disabled:opacity-70 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none";
 
 const UNITS = ["g", "kg", "ml", "l", "pcs", "tbsp", "tsp"];
 
@@ -52,16 +54,23 @@ const DEFAULTS = {
 };
 
 /**
- * The recipe in progress, kept for this browser tab only (it never leaves the
- * device). Paying mid free try reloads the page, and nobody should have to
- * type their recipe in twice.
+ * The recipe in progress and its last calculation, kept in this browser (it
+ * never leaves the device). Paying mid free try reloads the page, and a free
+ * try's one calculation shouldn't vanish with a new tab.
  */
 const STORE_KEY = "churroai:calculator";
-type Saved = typeof DEFAULTS;
+type Inputs = typeof DEFAULTS;
+
+/** A calculation: the recipe exactly as it was when Calculate was clicked, and its numbers. */
+interface Result {
+  inputs: Inputs;
+  sums: Sums;
+}
+type Saved = Inputs & { result?: Result | null };
 
 function readSaved(): Partial<Saved> | null {
   try {
-    const raw = sessionStorage.getItem(STORE_KEY);
+    const raw = localStorage.getItem(STORE_KEY);
     return raw ? (JSON.parse(raw) as Partial<Saved>) : null;
   } catch {
     return null;
@@ -73,6 +82,44 @@ function costUsed(ing: Ingredient): number {
   return (ing.qtyUsed / ing.purchaseQty) * ing.purchasePrice;
 }
 
+type Sums = ReturnType<typeof computeSums>;
+
+function computeSums(i: Inputs) {
+  const rowCosts: Record<string, number> = Object.fromEntries(i.ingredients.map((ing) => [ing.id, costUsed(ing)]));
+  const ingredientCost = i.ingredients.reduce((sum, ing) => sum + costUsed(ing), 0);
+  const wastageAmount = ingredientCost * (i.wastagePct / 100);
+  const ingredientCostWithWastage = ingredientCost + wastageAmount;
+  const packagingCost = i.packagingPerPiece * i.targetYield;
+  const totalBatchCost = ingredientCostWithWastage + packagingCost + i.labourCost + i.electricityCost + i.otherCost;
+  const costPerPiece = i.targetYield > 0 ? totalBatchCost / i.targetYield : 0;
+  const marginFraction = Math.min(i.targetMargin, 99) / 100;
+  const suggestedSellingPrice = marginFraction < 1 ? costPerPiece / (1 - marginFraction) : 0;
+  const profitPerPiece = suggestedSellingPrice - costPerPiece;
+  const scalingFactor = i.originalYield > 0 ? i.targetYield / i.originalYield : 0;
+
+  const effectivePrice = i.actualSellingPrice > 0 ? i.actualSellingPrice : suggestedSellingPrice;
+  const actualRevenue = effectivePrice * i.targetYield;
+  const actualGrossProfit = actualRevenue - totalBatchCost;
+  const actualGrossMargin = actualRevenue > 0 ? (actualGrossProfit / actualRevenue) * 100 : 0;
+
+  return {
+    rowCosts,
+    ingredientCost,
+    wastageAmount,
+    ingredientCostWithWastage,
+    packagingCost,
+    totalBatchCost,
+    costPerPiece,
+    suggestedSellingPrice,
+    profitPerPiece,
+    scalingFactor,
+    effectivePrice,
+    actualRevenue,
+    actualGrossProfit,
+    actualGrossMargin,
+  };
+}
+
 function round2(value: number): number {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
@@ -82,17 +129,24 @@ function csvCell(value: string | number): string {
 }
 
 /**
- * Free-try limits on exporting. `used` is the try's one export already spent;
- * `claim` spends it (resolving true if allowed); `onLocked` is where a
- * spent export sends them — the pass. Omitted for pass holders: no limits.
+ * Free-try limits: one calculation and one export. `calcUsed`/`exportUsed`
+ * say they're spent; the claims spend them (resolving true if allowed);
+ * `onLocked` is where a spent one sends them — the pass. Omitted for pass
+ * holders: no limits.
  */
-export interface ExportGate {
-  used: boolean;
-  claim: () => Promise<boolean>;
+export interface TrialLimits {
+  calcUsed: boolean;
+  exportUsed: boolean;
+  claimCalc: () => Promise<boolean>;
+  claimExport: () => Promise<boolean>;
   onLocked: () => void;
 }
 
-export function CostCalculator({ exportGate }: { exportGate?: ExportGate } = {}) {
+/**
+ * Results appear only when Calculate is clicked, never live while typing —
+ * and stay those of that click until the next one.
+ */
+export function CostCalculator({ limits }: { limits?: TrialLimits } = {}) {
   const [ingredients, setIngredients] = useState<Ingredient[]>(DEFAULTS.ingredients);
   const [originalYield, setOriginalYield] = useState(DEFAULTS.originalYield);
   const [targetYield, setTargetYield] = useState(DEFAULTS.targetYield);
@@ -103,7 +157,9 @@ export function CostCalculator({ exportGate }: { exportGate?: ExportGate } = {})
   const [otherCost, setOtherCost] = useState(DEFAULTS.otherCost);
   const [targetMargin, setTargetMargin] = useState(DEFAULTS.targetMargin);
   const [actualSellingPrice, setActualSellingPrice] = useState(DEFAULTS.actualSellingPrice);
+  const [result, setResult] = useState<Result | null>(null);
   const [restored, setRestored] = useState(false);
+  const [calculating, setCalculating] = useState(false);
   const [exporting, setExporting] = useState(false);
   // During a free try the sheet only prints through the button below, so the browser's own Print can't skip the limit.
   const [printing, setPrinting] = useState(false);
@@ -116,16 +172,16 @@ export function CostCalculator({ exportGate }: { exportGate?: ExportGate } = {})
 
   /** Runs an export, spending the free try's one export first when there's a limit. */
   async function gated(run: () => void) {
-    if (!exportGate) return run();
-    if (exportGate.used) return exportGate.onLocked();
+    if (!limits) return run();
+    if (limits.exportUsed) return limits.onLocked();
     setExporting(true);
-    const ok = await exportGate.claim();
+    const ok = await limits.claimExport();
     setExporting(false);
     if (ok) run();
   }
 
   function printSheet() {
-    if (!exportGate) return window.print();
+    if (!limits) return window.print();
     setPrinting(true);
     // Let React drop the print guard before the print dialog snapshots the page.
     setTimeout(() => window.print(), 50);
@@ -147,6 +203,7 @@ export function CostCalculator({ exportGate }: { exportGate?: ExportGate } = {})
         num(saved.otherCost, setOtherCost);
         num(saved.targetMargin, setTargetMargin);
         num(saved.actualSellingPrice, setActualSellingPrice);
+        if (saved.result?.inputs && saved.result.sums) setResult(saved.result);
       }
       setRestored(true);
     }, 0);
@@ -166,9 +223,10 @@ export function CostCalculator({ exportGate }: { exportGate?: ExportGate } = {})
       otherCost,
       targetMargin,
       actualSellingPrice,
+      result,
     };
     try {
-      sessionStorage.setItem(STORE_KEY, JSON.stringify(saved));
+      localStorage.setItem(STORE_KEY, JSON.stringify(saved));
     } catch {
       // Private mode or storage full: the calculator still works, it just won't remember.
     }
@@ -184,6 +242,7 @@ export function CostCalculator({ exportGate }: { exportGate?: ExportGate } = {})
     otherCost,
     targetMargin,
     actualSellingPrice,
+    result,
   ]);
 
   const setIngredient = (id: string, patch: Partial<Ingredient>) =>
@@ -197,52 +256,39 @@ export function CostCalculator({ exportGate }: { exportGate?: ExportGate } = {})
 
   const removeIngredient = (id: string) => setIngredients((prev) => prev.filter((i) => i.id !== id));
 
-  const sums = useMemo(() => {
-    const ingredientCost = ingredients.reduce((sum, ing) => sum + costUsed(ing), 0);
-    const wastageAmount = ingredientCost * (wastagePct / 100);
-    const ingredientCostWithWastage = ingredientCost + wastageAmount;
-    const packagingCost = packagingPerPiece * targetYield;
-    const totalBatchCost = ingredientCostWithWastage + packagingCost + labourCost + electricityCost + otherCost;
-    const costPerPiece = targetYield > 0 ? totalBatchCost / targetYield : 0;
-    const marginFraction = Math.min(targetMargin, 99) / 100;
-    const suggestedSellingPrice = marginFraction < 1 ? costPerPiece / (1 - marginFraction) : 0;
-    const profitPerPiece = suggestedSellingPrice - costPerPiece;
-    const scalingFactor = originalYield > 0 ? targetYield / originalYield : 0;
-
-    const effectivePrice = actualSellingPrice > 0 ? actualSellingPrice : suggestedSellingPrice;
-    const actualRevenue = effectivePrice * targetYield;
-    const actualGrossProfit = actualRevenue - totalBatchCost;
-    const actualGrossMargin = actualRevenue > 0 ? (actualGrossProfit / actualRevenue) * 100 : 0;
-
-    return {
-      ingredientCost,
-      wastageAmount,
-      ingredientCostWithWastage,
-      packagingCost,
-      totalBatchCost,
-      costPerPiece,
-      suggestedSellingPrice,
-      profitPerPiece,
-      scalingFactor,
-      effectivePrice,
-      actualRevenue,
-      actualGrossProfit,
-      actualGrossMargin,
-    };
-  }, [
+  const inputs: Inputs = {
     ingredients,
+    originalYield,
+    targetYield,
     wastagePct,
     packagingPerPiece,
-    targetYield,
     labourCost,
     electricityCost,
     otherCost,
     targetMargin,
-    originalYield,
     actualSellingPrice,
-  ]);
+  };
+  // What's shown is always the last calculation, never the live inputs.
+  const sums = result?.sums;
+  const shown = result?.inputs;
+  const changed = result !== null && JSON.stringify(result.inputs) !== JSON.stringify(inputs);
+  // A free try's one calculation is spent: the recipe is read-only from here on.
+  const locked = Boolean(limits?.calcUsed);
+  const money = (value?: number) => (value === undefined ? "—" : formatPricePrecise(round2(value)));
+
+  async function calculate() {
+    if (limits) {
+      if (limits.calcUsed) return limits.onLocked();
+      setCalculating(true);
+      const ok = await limits.claimCalc();
+      setCalculating(false);
+      if (!ok) return;
+    }
+    setResult({ inputs: structuredClone(inputs), sums: computeSums(inputs) });
+  }
 
   function resetAll() {
+    setResult(null);
     if (!window.confirm("Reset the calculator? Everything you've entered will be cleared.")) return;
     setIngredients(DEFAULTS.ingredients.map((i) => ({ ...i })));
     setOriginalYield(DEFAULTS.originalYield);
@@ -257,27 +303,29 @@ export function CostCalculator({ exportGate }: { exportGate?: ExportGate } = {})
   }
 
   function exportCsv() {
+    if (!result) return;
+    const { inputs: r, sums: t } = result;
     const rows: (string | number)[][] = [
       ["Ingredient", "Qty used", "Unit", "Purchase qty", "Price paid (INR)", "Cost used (INR)"],
-      ...ingredients.map((ing) => [
+      ...r.ingredients.map((ing) => [
         ing.name || "Untitled",
         ing.qtyUsed,
         ing.unit,
         ing.purchaseQty,
         round2(ing.purchasePrice),
-        round2(costUsed(ing)),
+        round2(t.rowCosts[ing.id] ?? costUsed(ing)),
       ]),
       [],
-      ["Total ingredient cost", "", "", "", "", round2(sums.ingredientCost)],
-      [`Wastage (${wastagePct}%)`, "", "", "", "", round2(sums.wastageAmount)],
-      ["Ingredient cost with wastage", "", "", "", "", round2(sums.ingredientCostWithWastage)],
-      ["Packaging cost", "", "", "", "", round2(sums.packagingCost)],
-      ["Labour cost", "", "", "", "", round2(labourCost)],
-      ["Electricity / gas", "", "", "", "", round2(electricityCost)],
-      ["Other expenses", "", "", "", "", round2(otherCost)],
-      ["Total batch cost", "", "", "", "", round2(sums.totalBatchCost)],
-      [`Cost per piece (${targetYield} pieces)`, "", "", "", "", round2(sums.costPerPiece)],
-      [`Suggested selling price (${targetMargin}% margin)`, "", "", "", "", round2(sums.suggestedSellingPrice)],
+      ["Total ingredient cost", "", "", "", "", round2(t.ingredientCost)],
+      [`Wastage (${r.wastagePct}%)`, "", "", "", "", round2(t.wastageAmount)],
+      ["Ingredient cost with wastage", "", "", "", "", round2(t.ingredientCostWithWastage)],
+      ["Packaging cost", "", "", "", "", round2(t.packagingCost)],
+      ["Labour cost", "", "", "", "", round2(r.labourCost)],
+      ["Electricity / gas", "", "", "", "", round2(r.electricityCost)],
+      ["Other expenses", "", "", "", "", round2(r.otherCost)],
+      ["Total batch cost", "", "", "", "", round2(t.totalBatchCost)],
+      [`Cost per piece (${r.targetYield} pieces)`, "", "", "", "", round2(t.costPerPiece)],
+      [`Suggested selling price (${r.targetMargin}% margin)`, "", "", "", "", round2(t.suggestedSellingPrice)],
     ];
     const csv = rows.map((row) => row.map(csvCell).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -289,10 +337,21 @@ export function CostCalculator({ exportGate }: { exportGate?: ExportGate } = {})
     URL.revokeObjectURL(url);
   }
 
-  const printBlocked = Boolean(exportGate) && !printing;
+  const printBlocked = Boolean(limits) && !printing;
+
+  /** Scrolling over, or pressing ↑/↓ in, a number box changes it in some browsers. Not here. */
+  function guardNumberInput(event: React.WheelEvent | React.KeyboardEvent) {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement) || target.type !== "number") return;
+    if (event.type === "wheel") {
+      if (document.activeElement === target) target.blur();
+    } else if ((event as React.KeyboardEvent).key === "ArrowUp" || (event as React.KeyboardEvent).key === "ArrowDown") {
+      event.preventDefault();
+    }
+  }
 
   return (
-    <section className="bg-cream">
+    <section className="bg-cream" onWheelCapture={guardNumberInput} onKeyDownCapture={guardNumberInput}>
       {printBlocked && (
         <p className="hidden p-10 text-center text-[14pt] print:block">
           Printing during the free try works through the &ldquo;Print / Save as PDF&rdquo; button, once. Get the Churro AI
@@ -301,8 +360,15 @@ export function CostCalculator({ exportGate }: { exportGate?: ExportGate } = {})
       )}
       <div className={cn("mx-auto max-w-[1400px] px-5 py-14 sm:px-8 lg:py-16", printBlocked && "print:hidden")}>
         <div className="lg:grid lg:grid-cols-[1fr_380px] lg:items-start lg:gap-12 xl:gap-16">
-          {/* Left column */}
-          <div className="space-y-8">
+          {/* Left column — read-only once a free try's one calculation is spent */}
+          <fieldset disabled={locked} className="min-w-0 space-y-8">
+            {locked && (
+              <p className="border-line/70 text-ink flex items-center gap-2 rounded-2xl border bg-[#fffdf9] px-5 py-3.5 text-[0.86rem] print:hidden">
+                <Lock className="text-muted size-4 shrink-0" />
+                Your free try&rsquo;s one calculation is done, so the recipe is locked. Get the pass to change it and
+                calculate again.
+              </p>
+            )}
             <Reveal>
               <Card title="1. Enter your ingredients" icon={Calculator}>
                 <div className="overflow-x-auto">
@@ -370,7 +436,7 @@ export function CostCalculator({ exportGate }: { exportGate?: ExportGate } = {})
                             />
                           </td>
                           <td className="text-ink px-3 py-2 text-right font-medium whitespace-nowrap">
-                            {formatPricePrecise(round2(costUsed(ing)))}
+                            {sums && ing.id in sums.rowCosts ? money(sums.rowCosts[ing.id]) : "—"}
                           </td>
                           <td className="py-2 text-right">
                             <button
@@ -445,7 +511,7 @@ export function CostCalculator({ exportGate }: { exportGate?: ExportGate } = {})
                   <div className="bg-forest/[0.06] rounded-xl px-4 py-3.5">
                     <p className="text-ink flex items-baseline justify-between text-[0.85rem] font-semibold">
                       Scaling factor
-                      <span className="font-display text-[1.25rem]">{sums.scalingFactor.toFixed(2)}×</span>
+                      <span className="font-display text-[1.25rem]">{sums ? `${sums.scalingFactor.toFixed(2)}×` : "—"}</span>
                     </p>
                     <p className="text-muted mt-1 text-[0.72rem] leading-snug">
                       Multiply your original recipe&rsquo;s quantities by this to scale it up for reference.
@@ -532,62 +598,82 @@ export function CostCalculator({ exportGate }: { exportGate?: ExportGate } = {})
                         min={0}
                         value={actualSellingPrice || ""}
                         onChange={(e) => setActualSellingPrice(Number(e.target.value))}
-                        placeholder={sums.suggestedSellingPrice ? round2(sums.suggestedSellingPrice).toString() : "0"}
+                        placeholder={sums?.suggestedSellingPrice ? round2(sums.suggestedSellingPrice).toString() : "0"}
                         className={inputClass}
                       />
                     </div>
                   </Field>
                 </div>
                 <div className="bg-forest/[0.06] mt-1 grid gap-4 rounded-xl px-5 py-4 sm:grid-cols-3">
-                  <Stat label={`Revenue (${targetYield || 0} pieces)`} value={formatPricePrecise(round2(sums.actualRevenue))} />
-                  <Stat label="Gross profit" value={formatPricePrecise(round2(sums.actualGrossProfit))} />
-                  <Stat label="Gross margin" value={`${round2(sums.actualGrossMargin)}%`} />
+                  <Stat label={`Revenue (${shown?.targetYield ?? 0} pieces)`} value={money(sums?.actualRevenue)} />
+                  <Stat label="Gross profit" value={money(sums?.actualGrossProfit)} />
+                  <Stat label="Gross margin" value={sums ? `${round2(sums.actualGrossMargin)}%` : "—"} />
                 </div>
               </Card>
             </Reveal>
-          </div>
+            <Reveal delay={0.2} className="print:hidden">
+              <CalculateButton
+                onClick={calculate}
+                busy={calculating}
+                again={result !== null}
+                locked={locked}
+                note={limits && !limits.calcUsed ? "Your free try includes one calculation." : undefined}
+              />
+            </Reveal>
+          </fieldset>
 
           {/* Right column — sticky summary */}
           <aside className="mt-10 space-y-6 lg:sticky lg:top-28 lg:mt-0">
             <Reveal delay={0.05}>
               <div className="border-line/70 bg-cream-warm rounded-2xl border p-6 sm:p-7">
                 <h2 className="text-ink text-[1.05rem] font-semibold">Cost summary</h2>
+                {!result && (
+                  <p className="text-muted mt-2 text-[0.82rem] leading-relaxed">
+                    Fill in your recipe, then click <strong className="text-ink">Calculate</strong> to see your costs and
+                    selling price.
+                  </p>
+                )}
+                {changed && (
+                  <p className="mt-2 rounded-lg bg-[var(--color-gold)]/15 px-3 py-2 text-[0.78rem] text-ink print:hidden">
+                    You&rsquo;ve changed the recipe since this calculation. Click Calculate to update it.
+                  </p>
+                )}
                 <div className="divide-line/40 mt-4 divide-y text-[0.85rem]">
-                  <SummaryRow label="Total ingredient cost" value={formatPricePrecise(round2(sums.ingredientCost))} />
-                  <SummaryRow label={`Wastage (${wastagePct}%)`} value={formatPricePrecise(round2(sums.wastageAmount))} />
-                  <SummaryRow label="Ingredient cost with wastage" value={formatPricePrecise(round2(sums.ingredientCostWithWastage))} />
-                  <SummaryRow label="Packaging cost" value={formatPricePrecise(round2(sums.packagingCost))} />
-                  <SummaryRow label="Labour cost" value={formatPricePrecise(round2(labourCost))} />
-                  <SummaryRow label="Electricity / gas" value={formatPricePrecise(round2(electricityCost))} />
-                  <SummaryRow label="Other expenses" value={formatPricePrecise(round2(otherCost))} />
+                  <SummaryRow label="Total ingredient cost" value={money(sums?.ingredientCost)} />
+                  <SummaryRow label={`Wastage (${shown?.wastagePct ?? wastagePct}%)`} value={money(sums?.wastageAmount)} />
+                  <SummaryRow label="Ingredient cost with wastage" value={money(sums?.ingredientCostWithWastage)} />
+                  <SummaryRow label="Packaging cost" value={money(sums?.packagingCost)} />
+                  <SummaryRow label="Labour cost" value={money(shown?.labourCost)} />
+                  <SummaryRow label="Electricity / gas" value={money(shown?.electricityCost)} />
+                  <SummaryRow label="Other expenses" value={money(shown?.otherCost)} />
                 </div>
                 <div className="border-line/70 mt-2 flex items-center justify-between border-t pt-3.5">
                   <span className="text-ink text-[0.92rem] font-semibold">Total batch cost</span>
                   <span className="font-display text-ink text-[1.2rem] font-semibold">
-                    {formatPricePrecise(round2(sums.totalBatchCost))}
+                    {money(sums?.totalBatchCost)}
                   </span>
                 </div>
 
                 <div className="mt-5 space-y-3">
                   <div className="bg-[var(--color-gold)]/15 rounded-xl px-4 py-3.5">
                     <p className="text-ink flex items-center gap-1 text-[0.78rem] font-semibold">Cost per piece</p>
-                    <p className="text-muted text-[0.72rem]">{targetYield || 0} pieces</p>
+                    <p className="text-muted text-[0.72rem]">{shown?.targetYield ?? targetYield} pieces</p>
                     <p className="font-display text-ink mt-1 text-[1.4rem] font-semibold">
-                      {formatPricePrecise(round2(sums.costPerPiece))}
+                      {money(sums?.costPerPiece)}
                     </p>
                   </div>
                   <div className="bg-forest/10 border-forest/15 rounded-xl border px-4 py-3.5">
                     <p className="text-ink text-[0.78rem] font-semibold">Suggested selling price</p>
-                    <p className="text-muted text-[0.72rem]">{targetMargin || 0}% profit margin</p>
+                    <p className="text-muted text-[0.72rem]">{shown?.targetMargin ?? targetMargin}% profit margin</p>
                     <p className="font-display text-forest mt-1 text-[1.4rem] font-semibold">
-                      {formatPricePrecise(round2(sums.suggestedSellingPrice))}
+                      {money(sums?.suggestedSellingPrice)}
                     </p>
                   </div>
                 </div>
 
                 <div className="divide-line/40 mt-4 divide-y text-[0.85rem]">
-                  <SummaryRow label="Profit per piece" value={formatPricePrecise(round2(sums.profitPerPiece))} />
-                  <SummaryRow label="Gross profit margin" value={`${targetMargin || 0}%`} />
+                  <SummaryRow label="Profit per piece" value={money(sums?.profitPerPiece)} />
+                  <SummaryRow label="Gross profit margin" value={shown ? `${shown.targetMargin}%` : "—"} />
                 </div>
               </div>
             </Reveal>
@@ -595,42 +681,48 @@ export function CostCalculator({ exportGate }: { exportGate?: ExportGate } = {})
             <Reveal delay={0.1} className="print:hidden">
               <div className="border-line/70 bg-cream-warm rounded-2xl border p-6 sm:p-7">
                 <h2 className="text-ink text-[1.05rem] font-semibold">Actions</h2>
-                {exportGate && (
+                {limits && (
                   <p
                     className={cn(
                       "mt-2 flex items-center gap-1.5 text-[0.78rem]",
-                      exportGate.used ? "text-muted" : "text-ink/70",
+                      limits.exportUsed ? "text-muted" : "text-ink/70",
                     )}
                   >
-                    {exportGate.used && <Lock className="size-3.5 shrink-0" />}
-                    {exportGate.used
+                    {limits.exportUsed && <Lock className="size-3.5 shrink-0" />}
+                    {limits.exportUsed
                       ? "Your free try's one export is used. Get the pass for unlimited exports."
                       : "Your free try includes one export: print, PDF or CSV."}
+                  </p>
+                )}
+                {(!result || changed) && (
+                  <p className="text-muted mt-2 text-[0.78rem]">
+                    {result ? "Calculate again to export your latest numbers." : "Calculate first, then export."}
                   </p>
                 )}
                 <div className="mt-4 space-y-2.5">
                   <button
                     type="button"
-                    disabled={exporting}
+                    disabled={exporting || !result || changed}
                     onClick={() => gated(printSheet)}
                     className="bg-forest text-cream hover:bg-forest-deep flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-[0.85rem] font-medium transition-colors disabled:opacity-60"
                   >
-                    {exportGate?.used ? <Lock className="size-4" /> : <Printer className="size-4" />}
+                    {limits?.exportUsed ? <Lock className="size-4" /> : <Printer className="size-4" />}
                     Print / Save as PDF
                   </button>
                   <button
                     type="button"
-                    disabled={exporting}
+                    disabled={exporting || !result || changed}
                     onClick={() => gated(exportCsv)}
                     className="border-forest/25 text-forest hover:bg-forest/5 flex w-full items-center justify-center gap-2 rounded-full border px-5 py-3 text-[0.85rem] font-medium transition-colors disabled:opacity-60"
                   >
-                    {exportGate?.used ? <Lock className="size-4" /> : <Download className="size-4" />}
+                    {limits?.exportUsed ? <Lock className="size-4" /> : <Download className="size-4" />}
                     Export as CSV
                   </button>
                   <button
                     type="button"
                     onClick={resetAll}
-                    className="text-muted hover:text-ink flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-[0.85rem] font-medium transition-colors"
+                    disabled={locked}
+                    className="text-muted hover:text-ink disabled:opacity-50 flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-[0.85rem] font-medium transition-colors"
                   >
                     <RotateCcw className="size-4" />
                     Reset all
@@ -642,6 +734,35 @@ export function CostCalculator({ exportGate }: { exportGate?: ExportGate } = {})
         </div>
       </div>
     </section>
+  );
+}
+
+function CalculateButton({
+  onClick,
+  busy,
+  again,
+  locked,
+  note,
+}: {
+  onClick: () => void;
+  busy: boolean;
+  again: boolean;
+  locked: boolean;
+  note?: string;
+}) {
+  return (
+    <div className="space-y-2 text-center">
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={busy || locked}
+        className="bg-forest text-cream hover:bg-forest-deep flex w-full items-center justify-center gap-2 rounded-full px-6 py-4 text-[1rem] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {busy ? <Loader2 className="size-4 animate-spin" /> : locked ? <Lock className="size-4" /> : <Calculator className="size-4" />}
+        {again ? "Calculate again" : "Calculate"}
+      </button>
+      {note && <p className="text-muted text-[0.78rem]">{note}</p>}
+    </div>
   );
 }
 

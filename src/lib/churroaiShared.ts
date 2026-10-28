@@ -25,7 +25,8 @@ export interface AiMember {
   freeTriesUsed: number;
   freeTriesLeft: number;
   trialEndsAt?: string;
-  /** The free try's one export (print/PDF or CSV) is spent. */
+  /** The free try's one calculation, and its one export (print/PDF or CSV), are spent. */
+  trialCalcUsed: boolean;
   trialExportUsed: boolean;
   passExpiresAt?: string;
   /** Auto-renewal is on: Razorpay will charge again at `nextChargeAt`. */

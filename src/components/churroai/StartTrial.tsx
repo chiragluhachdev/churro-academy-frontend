@@ -5,13 +5,33 @@ import { useState, useTransition } from "react";
 import { Loader2, Sparkles, Timer } from "lucide-react";
 
 import { startTrialAction } from "@/app/actions/churroai";
-import { formatTrialLength, passLength, type AiConfig } from "@/lib/churroaiShared";
+import { Paywall } from "@/components/churroai/Paywall";
+import { formatTrialLength, passLength, type AiConfig, type AiMember } from "@/lib/churroaiShared";
 import { formatPrice } from "@/lib/format";
 
-export function StartTrial({ config }: { config: AiConfig }) {
+export function StartTrial({ config, member }: { config: AiConfig; member: AiMember }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [buying, setBuying] = useState(false);
+
+  if (buying) {
+    return (
+      <div className="space-y-5">
+        <Paywall
+          config={config}
+          member={member}
+          heading="Get the pass"
+          lede={`Skip the free try and get unlimited use for a full ${passLength(config.passDays)}.`}
+        />
+        <p className="text-center">
+          <button type="button" onClick={() => setBuying(false)} className="text-forest text-[0.88rem] font-medium hover:underline">
+            Back to the free try
+          </button>
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="border-line/70 mx-auto max-w-xl rounded-3xl border bg-[#fffdf9] p-8 text-center shadow-[0_40px_90px_-50px_rgba(22,59,41,0.55)] sm:p-10">
@@ -45,6 +65,11 @@ export function StartTrial({ config }: { config: AiConfig }) {
         {pending ? <Loader2 className="size-4 animate-spin" /> : <Timer className="size-4" />}
         Start my free try
       </button>
+      <p className="mt-4">
+        <button type="button" onClick={() => setBuying(true)} className="text-forest text-[0.88rem] font-medium hover:underline">
+          Skip the try · Get it now for {formatPrice(config.passPrice)} / {passLength(config.passDays)}
+        </button>
+      </p>
     </div>
   );
 }

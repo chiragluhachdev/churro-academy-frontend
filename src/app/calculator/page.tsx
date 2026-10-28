@@ -86,7 +86,7 @@ export default async function ChurroAiCalculatorPage() {
       )}
       {member.access === "trial_available" && (
         <div className="px-5 py-16 sm:px-8 sm:py-24">
-          <StartTrial config={config} />
+          <StartTrial config={config} member={member} />
         </div>
       )}
       {member.access === "locked" && (

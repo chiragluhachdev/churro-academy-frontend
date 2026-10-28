@@ -118,10 +118,10 @@ export async function cancelAutoRenewAction(): Promise<Result<AiMember>> {
   );
 }
 
-/** Spends the free try's one export. */
-export async function claimTrialExportAction(): Promise<Result<AiMember>> {
+/** Spends the free try's one calculation or one export. */
+export async function claimTrialUseAction(use: "calculate" | "export"): Promise<Result<AiMember>> {
   return asMember(
-    (token) => api<{ member: AiMember }>("/ai/trial/export", { method: "POST", token }).then((r) => r.member),
-    "Couldn't start the export. Please try again.",
+    (token) => api<{ member: AiMember }>(`/ai/trial/${use}`, { method: "POST", token }).then((r) => r.member),
+    use === "calculate" ? "Couldn't calculate. Please try again." : "Couldn't start the export. Please try again.",
   );
 }

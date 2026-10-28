@@ -103,7 +103,7 @@ export function AiSettingsForm({ initialData }: { initialData: AiConfig }) {
       <Card title="Free try">
         <Field
           label="Free try length (minutes)"
-          hint="Every email gets one free try of this length, starting when they click “Start my free try”. A change applies to tries started after you save."
+          hint="Every email gets one free try of this length, starting when they click “Start my free try”. A change applies straight away, including to tries already running."
           className="max-w-sm"
         >
           {numberInput("trialMinutes", 1)}
