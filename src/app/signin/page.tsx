@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 /** Only ever send people back inside Churro AI — never to an arbitrary URL from the query string. */
 function safeNext(raw: string | undefined): string {
-  return raw && raw.startsWith("/churroai") && !raw.startsWith("//") ? raw : "/churroai/calculator";
+  return raw && raw.startsWith("/calculator") ? raw : "/calculator";
 }
 
 export default async function ChurroAiLoginPage({ searchParams }: { searchParams?: Promise<{ next?: string }> }) {
@@ -27,7 +27,7 @@ export default async function ChurroAiLoginPage({ searchParams }: { searchParams
   return (
     <div className="bg-cream grid min-h-screen lg:grid-cols-2">
       <div className="flex flex-col px-5 py-6 sm:px-10">
-        <Link href="/churroai" aria-label="Churro AI home" className="w-fit">
+        <Link href="/" aria-label="Churro AI home" className="w-fit">
           <Brand />
         </Link>
         <div className="flex flex-1 items-center justify-center py-12">
@@ -35,9 +35,9 @@ export default async function ChurroAiLoginPage({ searchParams }: { searchParams
             <h1 className="font-display text-ink text-[2rem] leading-tight font-medium tracking-[-0.015em]">
               Sign in to Churro AI
             </h1>
-            <p className="text-muted mt-2 text-[0.95rem]">Use your mobile number — no password needed.</p>
+            <p className="text-muted mt-2 text-[0.95rem]">Use your email address. No password needed.</p>
             <div className="mt-8">
-              <LoginForm demoOtp={config.demoOtp} next={next} />
+              <LoginForm next={next} />
             </div>
           </div>
         </div>
@@ -52,7 +52,7 @@ export default async function ChurroAiLoginPage({ searchParams }: { searchParams
           <p className="text-cream/60 text-[0.72rem] font-medium tracking-[0.2em] uppercase">How it works</p>
           <ul className="mt-6 space-y-5">
             {[
-              `Your first try is free — ${formatTrialLength(config.trialMinutes)} with the Recipe Calculator.`,
+              `Your first try is free: ${formatTrialLength(config.trialMinutes)} with the Recipe Calculator.`,
               `Then ${formatPrice(config.passPrice)} a ${passLength(config.passDays)} for unlimited use.`,
               "Pay securely with Razorpay. Your GST invoice comes by email.",
             ].map((line) => (

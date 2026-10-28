@@ -6,7 +6,7 @@ import { Reveal } from "@/components/ui/Reveal";
 
 export const metadata: Metadata = {
   title: "Refund Policy",
-  description: "Churro Academy's refund policy — a 7-day, no-questions-asked refund window on every course.",
+  description: "Churro Academy's refund policy: a 7-day, no-questions-asked refund window on every course.",
   alternates: { canonical: "/refunds" },
   robots: { index: true, follow: true },
 };
@@ -27,7 +27,7 @@ export default function RefundsPage() {
               <h2 className="font-display text-ink text-[1.3rem] font-medium">The 7-day window</h2>
               <p className="text-muted mt-3 text-[0.95rem] leading-[1.8]">
                 If a course isn&rsquo;t right for you, tell us within 7 days of your purchase date and
-                we&rsquo;ll refund it in full — no partial refunds, no reason required. After 7 days, the
+                we&rsquo;ll refund it in full. No partial refunds, no reason required. After 7 days, the
                 purchase is final, since by then you&rsquo;ve typically had time to work through most of the
                 course.
               </p>

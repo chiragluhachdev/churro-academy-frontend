@@ -37,13 +37,12 @@ export interface Pricing {
 }
 
 /** `live` = the calculator is switched on; `label` fits the visitor ("Try it free" / "Open Recipe Calculator"). */
-export type Cta = { live: boolean; label: string; earlyAccessHref: string };
+export type Cta = { live: boolean; label: string; contactHref: string };
 
 interface Props {
   cta: Cta;
   pricing: Pricing;
   signedIn: boolean;
-  academyUrl: string;
 }
 
 const NAV = [
@@ -54,7 +53,7 @@ const NAV = [
   { label: "FAQ", href: "#faq" },
 ];
 
-export function ChurroAiLanding({ cta, pricing, signedIn, academyUrl }: Props) {
+export function ChurroAiLanding({ cta, pricing, signedIn }: Props) {
   return (
     <div id="top" className="bg-cream text-ink relative overflow-x-clip">
       <Header cta={cta} signedIn={signedIn} />
@@ -65,7 +64,7 @@ export function ChurroAiLanding({ cta, pricing, signedIn, academyUrl }: Props) {
       <PricingSection cta={cta} pricing={pricing} />
       <Faq pricing={pricing} />
       <FinalCta cta={cta} />
-      <Footer academyUrl={academyUrl} earlyAccessHref={cta.earlyAccessHref} />
+      <Footer contactHref={cta.contactHref} />
     </div>
   );
 }
@@ -92,19 +91,12 @@ function PrimaryCta({
   );
   const arrow = <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-1" />;
 
-  if (cta.live) {
-    return (
-      <Link href="/churroai/calculator" className={cls}>
-        {cta.label}
-        {arrow}
-      </Link>
-    );
-  }
+  // Always straight into the tool — if it's switched off, the calculator page says it's opening soon.
   return (
-    <a href={cta.earlyAccessHref} target="_blank" rel="noreferrer" className={cls}>
-      Get early access
+    <Link href="/calculator" className={cls}>
+      {cta.label}
       {arrow}
-    </a>
+    </Link>
   );
 }
 
@@ -128,7 +120,7 @@ function Header({ cta, signedIn }: { cta: Cta; signedIn: boolean }) {
       )}
     >
       <div className="mx-auto flex max-w-[1240px] items-center justify-between gap-6 px-5 py-3.5 sm:px-8">
-        <a href="#top" aria-label="Churro AI — top of page">
+        <a href="#top" aria-label="Churro AI, top of page">
           <Brand />
         </a>
         <nav aria-label="Churro AI" className="hidden items-center gap-7 lg:flex">
@@ -139,8 +131,8 @@ function Header({ cta, signedIn }: { cta: Cta; signedIn: boolean }) {
           ))}
         </nav>
         <div className="flex items-center gap-4">
-          {cta.live && !signedIn && (
-            <Link href="/churroai/login" className="text-ink/70 hover:text-forest hidden text-[0.88rem] transition-colors sm:inline">
+          {!signedIn && (
+            <Link href="/signin" className="text-ink/70 hover:text-forest hidden text-[0.88rem] transition-colors sm:inline">
               Log in
             </Link>
           )}
@@ -231,7 +223,7 @@ function Hero({ cta }: { cta: Cta }) {
         >
           <LiveDemo />
           <p className="text-muted mt-4 text-center text-[0.78rem]">
-            Try it — drag the sliders and watch every number update.
+            Try it: drag the sliders and watch every number update.
           </p>
         </motion.div>
       </div>
@@ -300,7 +292,7 @@ function Suite({ cta }: { cta: Cta }) {
                 </p>
               </div>
               <a
-                href={cta.earlyAccessHref}
+                href={cta.contactHref}
                 target="_blank"
                 rel="noreferrer"
                 className="text-forest group mt-8 inline-flex items-center gap-1.5 text-[0.9rem] font-medium"
@@ -497,7 +489,7 @@ function PricingSection({ cta, pricing }: { cta: Cta; pricing: Pricing }) {
             Try it free. Then one simple pass.
           </h2>
           <p className="text-muted mt-4 text-[1rem] leading-[1.75]">
-            Sign in with your phone number and cost a real recipe before you pay anything.
+            Sign in with your email and cost a real recipe before you pay anything.
           </p>
         </Reveal>
 
@@ -508,7 +500,7 @@ function PricingSection({ cta, pricing }: { cta: Cta; pricing: Pricing }) {
               <p className="font-display text-ink mt-4 text-[2.6rem] leading-none font-semibold">₹0</p>
               <p className="text-muted mt-2 text-[0.85rem]">{trial} with the full calculator</p>
               <ul className="mt-7 space-y-3 text-[0.9rem]">
-                {["Just your mobile number", "No card needed", "Every feature unlocked"].map((item) => (
+                {["Just your email", "No card needed", "Every feature unlocked"].map((item) => (
                   <li key={item} className="text-ink/80 flex items-start gap-2.5">
                     <Check className="text-forest mt-0.5 size-4 shrink-0" strokeWidth={2.2} />
                     {item}
@@ -562,15 +554,11 @@ function faqs(pricing: Pricing) {
     },
     {
       q: "How much does it cost?",
-      a: `Your first try is free — ${formatTrialLength(pricing.trialMinutes)} with the full calculator. After that, the ${pricing.passName} is ${formatPrice(pricing.passPrice)} a ${passLength(pricing.passDays)}, paid once through Razorpay, with a GST invoice by email. It doesn't renew on its own.`,
+      a: `Your first try is free: ${formatTrialLength(pricing.trialMinutes)} with the full calculator. After that, the ${pricing.passName} is ${formatPrice(pricing.passPrice)} a ${passLength(pricing.passDays)}, paid once through Razorpay, with a GST invoice by email. It doesn't renew on its own.`,
     },
     {
       q: "How do I sign in?",
-      a: "With your mobile number and a one-time code. There's no password to remember, and you can sign in from any device.",
-    },
-    {
-      q: "Do I need to be a Churro Academy student?",
-      a: "No. Churro AI is open to every baker, whether or not you've taken a course with us.",
+      a: "With your email address and a one-time code we send you. There's no password to remember, and you can sign in from any device.",
     },
     {
       q: "Is my recipe data stored anywhere?",
@@ -645,23 +633,22 @@ function FinalCta({ cta }: { cta: Cta }) {
 
 /* --------------------------------------------------------------- footer -- */
 
-function Footer({ academyUrl, earlyAccessHref }: { academyUrl: string; earlyAccessHref: string }) {
+function Footer({ contactHref }: { contactHref: string }) {
   return (
     <footer className="border-line/60 border-t print:hidden">
       <div className="mx-auto flex max-w-[1240px] flex-col gap-6 px-5 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-8">
         <div>
           <Brand />
-          <p className="text-muted mt-2 text-[0.8rem]">
-            A product of{" "}
-            <a href={academyUrl} className="text-forest font-medium hover:underline">
-              Churro Academy
-            </a>
-          </p>
+          <p className="text-muted mt-2 text-[0.8rem]">A product of Churro Academy</p>
         </div>
         <nav aria-label="Churro AI footer" className="text-ink/70 flex flex-wrap gap-x-6 gap-y-2 text-[0.85rem]">
           <a href="#tools" className="hover:text-forest">Tools</a>
           <a href="#faq" className="hover:text-forest">FAQ</a>
-          <a href={earlyAccessHref} target="_blank" rel="noreferrer" className="hover:text-forest inline-flex items-center gap-1.5">
+          {/* Razorpay needs these policies reachable from the site. */}
+          <Link href="/terms" className="hover:text-forest">Terms</Link>
+          <Link href="/privacy" className="hover:text-forest">Privacy</Link>
+          <Link href="/refunds" className="hover:text-forest">Refunds</Link>
+          <a href={contactHref} target="_blank" rel="noreferrer" className="hover:text-forest inline-flex items-center gap-1.5">
             <MessageCircle className="size-3.5" />
             Contact us
           </a>

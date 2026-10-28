@@ -53,7 +53,7 @@ export function TrialBanner({ endsAt, config, onUpgrade }: { endsAt: string; con
         onClick={onUpgrade}
         className="bg-forest text-cream hover:bg-forest-deep rounded-full px-4 py-2 text-[0.82rem] font-medium transition-colors"
       >
-        Keep it — {formatPrice(config.passPrice)} / {passLength(config.passDays)}
+        Keep it · {formatPrice(config.passPrice)} / {passLength(config.passDays)}
       </button>
     </div>
   );

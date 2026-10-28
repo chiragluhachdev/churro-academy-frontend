@@ -269,7 +269,7 @@ export function CostCalculator() {
                   </table>
                 </div>
                 <p className="text-muted mt-1 text-[0.72rem]">
-                  Qty used and purchase qty should share the same unit — cost used is purchase price ×
+                  Qty used and purchase qty should share the same unit. Cost used is purchase price ×
                   (qty used ÷ purchase qty).
                 </p>
                 <button
@@ -310,7 +310,7 @@ export function CostCalculator() {
                       <span className="text-muted shrink-0 text-[0.8rem]">pieces</span>
                     </div>
                   </Field>
-                  <Field label="Wastage" hint="Optional — trimmings, spoilage, testing.">
+                  <Field label="Wastage" hint="Optional: trimmings, spoilage, testing.">
                     <div className="flex items-center gap-2">
                       <input
                         type="number"
@@ -373,7 +373,7 @@ export function CostCalculator() {
                       />
                     </div>
                   </Field>
-                  <Field label="Other expenses" hint="Anything else — delivery, misc.">
+                  <Field label="Other expenses" hint="Anything else: delivery, misc.">
                     <div className="flex items-center gap-2">
                       <span className="text-muted shrink-0 text-[0.85rem]">₹</span>
                       <input
@@ -405,7 +405,7 @@ export function CostCalculator() {
                       <span className="text-muted shrink-0 text-[0.8rem]">%</span>
                     </div>
                   </Field>
-                  <Field label="Actual selling price" hint="Optional — leave blank to use the suggested price.">
+                  <Field label="Actual selling price" hint="Optional. Leave blank to use the suggested price.">
                     <div className="flex items-center gap-2">
                       <span className="text-muted shrink-0 text-[0.85rem]">₹</span>
                       <input

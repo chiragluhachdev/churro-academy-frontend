@@ -12,7 +12,7 @@ import { whatsappGreeting, whatsappNumber } from "@/data/site";
 export const metadata: Metadata = {
   title: "Contact Us",
   description:
-    "Get in touch with Churro Academy — WhatsApp or email us with questions about courses, orders or anything else.",
+    "Get in touch with Churro Academy. WhatsApp or email us with questions about Churro AI, payments or anything else.",
   alternates: { canonical: "/contact" },
 };
 
@@ -49,7 +49,7 @@ export default async function ContactPage() {
       <JsonLd data={contactPageJsonLd} />
       <PageHeader
         eyebrow="Get in Touch"
-        title="Questions about a course? Ask a real person."
+        title="Questions? Ask a real person."
         lede="No ticket system, no chatbot loop. WhatsApp or email reaches Chef Simone Kathuria's team directly."
       />
 
@@ -62,7 +62,7 @@ export default async function ContactPage() {
               </span>
               <h2 className="text-ink mt-5 text-[1.15rem] font-semibold">WhatsApp</h2>
               <p className="text-muted mt-2 text-[0.9rem] leading-[1.7]">
-                The fastest way to reach us — for course questions, order help or anything else.
+                The fastest way to reach us for questions, payment help or anything else.
               </p>
               <Link
                 href={whatsappHref}
@@ -81,7 +81,7 @@ export default async function ContactPage() {
               </span>
               <h2 className="text-ink mt-5 text-[1.15rem] font-semibold">Email</h2>
               <p className="text-muted mt-2 text-[0.9rem] leading-[1.7]">
-                For anything in writing — refund requests, invoices, or a question that needs detail.
+                For anything in writing: refund requests, invoices, or a question that needs detail.
               </p>
               <Link
                 href={`mailto:${SUPPORT_EMAIL}`}
@@ -130,10 +130,10 @@ export default async function ContactPage() {
           <Reveal delay={0.2} className="mt-10 text-[0.88rem]">
             <p className="text-muted">
               Looking for quick answers instead? Check the{" "}
-              <Link href="/faqs" className="text-forest font-medium hover:underline">
+              <Link href="/#faq" className="text-forest font-medium hover:underline">
                 FAQs
-              </Link>{" "}
-              — payment, refunds, equipment and access are all covered there.
+              </Link>
+              . Pricing, sign-in, payment and your data are all covered there.
             </p>
           </Reveal>
         </div>

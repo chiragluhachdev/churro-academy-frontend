@@ -17,7 +17,7 @@ const sections: { heading: string; body: React.ReactNode }[] = [
     heading: "What we collect",
     body: (
       <p>
-        Buying a course doesn&rsquo;t require an account — we only collect what checkout needs: your
+        Buying a course doesn&rsquo;t require an account. We only collect what checkout needs: your
         name, email address, WhatsApp number, and the course and amount you paid. If you message us on
         WhatsApp or email, we keep that conversation to help you.
       </p>
@@ -30,7 +30,7 @@ const sections: { heading: string; body: React.ReactNode }[] = [
         <li>To process your payment and confirm your order.</li>
         <li>To email and WhatsApp you the lesson videos and material for the course you bought.</li>
         <li>To send you your invoice and respond if you contact support.</li>
-        <li>To improve the courses and site — we don&rsquo;t sell your data, ever.</li>
+        <li>To improve the courses and site. We don&rsquo;t sell your data, ever.</li>
       </ul>
     ),
   },
@@ -50,8 +50,8 @@ const sections: { heading: string; body: React.ReactNode }[] = [
     body: (
       <p>
         The public site sets no tracking or advertising cookies. A session cookie is used only for the
-        admin dashboard sign-in, which visitors never see. If that changes — for example, if we add
-        analytics — this policy will be updated first.
+        admin dashboard sign-in, which visitors never see. If that changes (for example, if we add
+        analytics), this policy will be updated first.
       </p>
     ),
   },
@@ -61,7 +61,7 @@ const sections: { heading: string; body: React.ReactNode }[] = [
       <p>
         Order and payment records are kept as long as needed for accounting, invoicing and legal
         requirements. You can ask us to delete personal details not required for those purposes at any
-        time — see Contact below.
+        time. See Contact below.
       </p>
     ),
   },

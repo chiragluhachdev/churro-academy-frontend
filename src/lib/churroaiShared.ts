@@ -8,17 +8,17 @@ export interface AiConfig {
   passDays: number;
   freeTries: number;
   trialMinutes: number;
-  /** Every number signs in with this until an SMS provider is connected. */
-  demoOtp: string;
 }
 
 export type AiAccess = "pass" | "trial" | "trial_available" | "locked";
 
 export interface AiMember {
   id: string;
+  /** The sign-in identity. */
+  email: string;
+  /** Only on early members, who signed in by phone before email sign-in. */
   phone: string;
   name: string;
-  email: string;
   access: AiAccess;
   freeTriesUsed: number;
   freeTriesLeft: number;
@@ -53,7 +53,6 @@ export const AI_DEFAULT_CONFIG: AiConfig = {
   passDays: 365,
   freeTries: 1,
   trialMinutes: 60,
-  demoOtp: "123456",
 };
 
 /** 365 → "year", 730 → "2 years", 30 → "30 days" — reads as "₹999 / year". */

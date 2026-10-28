@@ -27,7 +27,7 @@ const sections: { heading: string; body: React.ReactNode }[] = [
     body: (
       <p>
         Each course is a set of pre-recorded video lessons plus any accompanying material (recipe
-        notes, guides). There is no live instruction and no in-app player — once your payment is
+        notes, guides). There is no live instruction and no in-app player. Once your payment is
         confirmed, your lesson videos and material are sent to the email address and WhatsApp number
         you provided at checkout.
       </p>
@@ -38,7 +38,7 @@ const sections: { heading: string; body: React.ReactNode }[] = [
     body: (
       <p>
         Prices are shown in Indian Rupees (₹) and are inclusive of GST. Payment is a one-time charge
-        per course — there is no subscription. We reserve the right to change a course&rsquo;s price at
+        per course. There is no subscription. We reserve the right to change a course&rsquo;s price at
         any time; the price you were charged at checkout is the price that applies to your purchase.
       </p>
     ),
@@ -50,7 +50,7 @@ const sections: { heading: string; body: React.ReactNode }[] = [
         Once you&rsquo;ve paid for a course, you get lifetime access to its lesson videos and material for
         your own personal, non-commercial use. You may not re-record, re-upload, redistribute, resell,
         publicly share, or use course content to train any model or service. Video links are personal
-        to your purchase — please don&rsquo;t forward them.
+        to your purchase, so please don&rsquo;t forward them.
       </p>
     ),
   },
@@ -71,7 +71,7 @@ const sections: { heading: string; body: React.ReactNode }[] = [
     body: (
       <p>
         We teach technique carefully and test every recipe, but baking involves real ingredients,
-        ovens and hands — results can vary with equipment, altitude, ingredient brands and practice.
+        ovens and hands, so results can vary with equipment, altitude, ingredient brands and practice.
         We don&rsquo;t guarantee a specific result from any course.
       </p>
     ),
@@ -80,7 +80,7 @@ const sections: { heading: string; body: React.ReactNode }[] = [
     heading: "7. Intellectual property",
     body: (
       <p>
-        All course content — video, text, recipes, images and the Churro Academy name and mark — is
+        All course content (video, text, recipes, images and the Churro Academy name and mark) is
         owned by Churro Academy or Chef Simone Kathuria and is protected by copyright. Rights not
         expressly granted here are reserved.
       </p>
@@ -90,7 +90,7 @@ const sections: { heading: string; body: React.ReactNode }[] = [
     heading: "8. Acceptable use",
     body: (
       <p>
-        You agree not to misuse the site or checkout — for example, by attempting to pay less than the
+        You agree not to misuse the site or checkout, for example, by attempting to pay less than the
         listed price, interfering with the site&rsquo;s operation, or using it for anything unlawful.
       </p>
     ),

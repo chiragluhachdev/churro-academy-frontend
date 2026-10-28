@@ -2,10 +2,8 @@ import type { Metadata } from "next";
 import { Caveat, Inter, Playfair_Display } from "next/font/google";
 import { auth } from "@/auth";
 import { SessionProvider } from "@/components/auth/SessionProvider";
-import { ChatWidget } from "@/components/chat/ChatWidget";
+import { SiteFooter, SiteHeader } from "@/components/churroai/SiteChrome";
 import { ChromeGate } from "@/components/layout/ChromeGate";
-import { Footer } from "@/components/layout/Footer";
-import { Navbar } from "@/components/layout/Navbar";
 import { MotionProvider } from "@/components/ui/MotionProvider";
 import { fetchChef } from "@/lib/api";
 import { JsonLd, SITE_URL, organizationJsonLd, websiteJsonLd } from "@/lib/seo";
@@ -30,27 +28,27 @@ const caveat = Caveat({
   display: "swap",
 });
 
-const TITLE = "Churro Academy — Online Baking Courses with Chef Simone Kathuria";
+// The site is Churro AI for now. The academy's own title, nav (Navbar/Footer) and
+// chat widget are hidden, not deleted — swap them back in here to restore it.
+const TITLE = "Churro AI | Smart tools for bakers";
 const DESCRIPTION =
-  "Churro Academy (Churro Academy Global) turns your passion for desserts into real skills. Learn cakes, churros, French pastry and more from Chef Simone Kathuria through structured, step-by-step online baking courses with lifetime access.";
+  "Churro AI is a growing suite of tools for home bakers and bakery businesses, from Churro Academy. Start with the Recipe Cost Calculator: cost every batch and price it for the margin you want.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.churroacademyglobal.com"),
   title: {
     default: TITLE,
-    template: "%s · Churro Academy",
+    template: "%s · Churro AI",
   },
   description: DESCRIPTION,
-  applicationName: "Churro Academy",
+  applicationName: "Churro AI",
   keywords: [
+    "Churro AI",
     "Churro Academy",
-    "Churro Academy Global",
-    "Chef Simone Kathuria",
-    "online baking courses",
-    "online baking classes",
-    "churro making course",
-    "learn churros",
-    "online dessert courses",
+    "recipe cost calculator",
+    "bakery costing",
+    "cake pricing calculator",
+    "home baker pricing",
   ],
   alternates: { canonical: "/" },
   robots: { index: true, follow: true },
@@ -77,7 +75,7 @@ export const metadata: Metadata = {
     title: TITLE,
     description: DESCRIPTION,
     type: "website",
-    siteName: "Churro Academy",
+    siteName: "Churro AI",
     locale: "en_IN",
     url: "/",
     images: [
@@ -116,14 +114,13 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <SessionProvider session={session}>
           <MotionProvider>
             <ChromeGate>
-              <Navbar />
+              <SiteHeader />
             </ChromeGate>
             <main id="main" className="flex-1">
               {children}
             </main>
             <ChromeGate>
-              <Footer />
-              <ChatWidget />
+              <SiteFooter />
             </ChromeGate>
           </MotionProvider>
         </SessionProvider>

@@ -5,7 +5,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { Check, Loader2, Lock, ShieldCheck } from "lucide-react";
 
-import { confirmPassAction, startPassOrderAction, type RazorpayResult } from "@/app/churroai/actions";
+import { confirmPassAction, startPassOrderAction, type RazorpayResult } from "@/app/actions/churroai";
 import { passLength, type AiConfig, type AiMember } from "@/lib/churroaiShared";
 import { formatPrice } from "@/lib/format";
 import { openRazorpayCheckout } from "@/lib/razorpay";
@@ -44,7 +44,7 @@ export function Paywall({
     event.preventDefault();
     setError(null);
     if (name.trim().length < 2) return setError("Enter your name for the invoice.");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return setError("Enter a valid email — your invoice goes there.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return setError("Enter a valid email. Your invoice goes there.");
 
     setBusy(true);
     const started = await startPassOrderAction({ name: name.trim(), email: email.trim() });
@@ -66,7 +66,7 @@ export function Paywall({
           name: "Churro AI",
           description: order.passName,
           order_id: order.providerOrderId,
-          prefill: { name: order.buyer.name, email: order.buyer.email, contact: order.buyer.phone },
+          prefill: { name: order.buyer.name, email: order.buyer.email, contact: order.buyer.phone || undefined },
           theme: { color: "#294B32" },
           handler: (response) => {
             paid = true;

@@ -38,7 +38,7 @@ export function AiMembersTable({ members }: { members: AiMember[] }) {
   const [error, setError] = useState<string | null>(null);
 
   function act(member: AiMember, action: Action) {
-    if (!window.confirm(`${ACTIONS[action].confirm}\n\n${formatPhone(member.phone)}`)) return;
+    if (!window.confirm(`${ACTIONS[action].confirm}\n\n${member.email || formatPhone(member.phone)}`)) return;
     setError(null);
     setBusy(`${member.id}:${action}`);
     startTransition(async () => {
@@ -69,9 +69,11 @@ export function AiMembersTable({ members }: { members: AiMember[] }) {
               return (
                 <tr key={m.id} className="hover:bg-forest/5 transition-colors">
                   <td className="px-6 py-4">
-                    <p className="text-ink text-[0.92rem] font-medium">{formatPhone(m.phone)}</p>
-                    {(m.name || m.email) && (
-                      <p className="text-muted mt-0.5 text-[0.78rem]">{[m.name, m.email].filter(Boolean).join(" · ")}</p>
+                    <p className="text-ink text-[0.92rem] font-medium">{m.email || formatPhone(m.phone)}</p>
+                    {(m.name || (m.email && m.phone)) && (
+                      <p className="text-muted mt-0.5 text-[0.78rem]">
+                        {[m.name, m.email && m.phone ? formatPhone(m.phone) : ""].filter(Boolean).join(" · ")}
+                      </p>
                     )}
                   </td>
                   <td className="px-6 py-4">

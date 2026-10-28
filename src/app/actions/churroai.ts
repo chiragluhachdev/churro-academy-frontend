@@ -11,21 +11,21 @@ type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 
 const errorText = (error: unknown, fallback: string) => (error instanceof ApiError ? error.message : fallback);
 
-export async function requestOtpAction(phone: string): Promise<Result<{ phone: string }>> {
+export async function requestOtpAction(email: string): Promise<Result<{ email: string }>> {
   try {
-    const data = await api<{ phone: string }>("/ai/auth/request-otp", { method: "POST", body: { phone } });
-    return { ok: true, data: { phone: data.phone } };
+    const data = await api<{ email: string }>("/ai/auth/request-otp", { method: "POST", body: { email } });
+    return { ok: true, data: { email: data.email } };
   } catch (error) {
     return { ok: false, error: errorText(error, "Couldn't send a code. Please try again.") };
   }
 }
 
 /** Verifies the code and starts the session. The token goes into an httpOnly cookie and never reaches the browser's JS. */
-export async function verifyOtpAction(phone: string, code: string): Promise<Result<AiMember>> {
+export async function verifyOtpAction(email: string, code: string): Promise<Result<AiMember>> {
   try {
     const { token, member } = await api<{ token: string; member: AiMember }>("/ai/auth/verify-otp", {
       method: "POST",
-      body: { phone, code },
+      body: { email, code },
     });
     (await cookies()).set(AI_SESSION_COOKIE, token, {
       httpOnly: true,
@@ -42,7 +42,7 @@ export async function verifyOtpAction(phone: string, code: string): Promise<Resu
 
 export async function signOutAction(): Promise<void> {
   (await cookies()).delete(AI_SESSION_COOKIE);
-  redirect("/churroai");
+  redirect("/");
 }
 
 async function asMember<T>(call: (token: string) => Promise<T>, fallback: string): Promise<Result<T>> {

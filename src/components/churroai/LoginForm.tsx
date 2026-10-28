@@ -3,19 +3,18 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import type { FormEvent } from "react";
-import { ArrowRight, Info, Loader2, Smartphone } from "lucide-react";
+import { ArrowRight, Loader2, Mail } from "lucide-react";
 
-import { requestOtpAction, verifyOtpAction } from "@/app/churroai/actions";
-import { formatPhone } from "@/lib/churroaiShared";
+import { requestOtpAction, verifyOtpAction } from "@/app/actions/churroai";
 
 const inputClass =
   "w-full rounded-xl border border-line/60 bg-white px-4 py-3 text-[1rem] text-ink transition-colors placeholder:text-muted/50 focus:border-forest/50 focus:outline-none";
 
-export function LoginForm({ demoOtp, next }: { demoOtp: string; next: string }) {
+export function LoginForm({ next }: { next: string }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [step, setStep] = useState<"phone" | "code">("phone");
-  const [phone, setPhone] = useState("");
+  const [step, setStep] = useState<"email" | "code">("email");
+  const [email, setEmail] = useState("");
   const [sentTo, setSentTo] = useState("");
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -30,9 +29,9 @@ export function LoginForm({ demoOtp, next }: { demoOtp: string; next: string }) 
   function sendCode() {
     setError(null);
     startTransition(async () => {
-      const res = await requestOtpAction(phone);
+      const res = await requestOtpAction(email);
       if (!res.ok) return setError(res.error);
-      setSentTo(res.data.phone);
+      setSentTo(res.data.email);
       setCode("");
       setStep("code");
       setResendIn(30);
@@ -50,7 +49,7 @@ export function LoginForm({ demoOtp, next }: { demoOtp: string; next: string }) 
     });
   }
 
-  if (step === "phone") {
+  if (step === "email") {
     return (
       <form
         onSubmit={(e) => {
@@ -61,20 +60,17 @@ export function LoginForm({ demoOtp, next }: { demoOtp: string; next: string }) 
         className="space-y-5"
       >
         <label className="block space-y-2">
-          <span className="text-ink block text-[0.85rem] font-medium">Mobile number</span>
-          <span className="flex items-stretch gap-2">
-            <span className="border-line/60 text-ink/70 flex items-center rounded-xl border bg-white px-3.5 text-[1rem]">+91</span>
-            <input
-              type="tel"
-              inputMode="numeric"
-              autoComplete="tel-national"
-              autoFocus
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="98765 43210"
-              className={inputClass}
-            />
-          </span>
+          <span className="text-ink block text-[0.85rem] font-medium">Email address</span>
+          <input
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            autoFocus
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+            className={inputClass}
+          />
         </label>
         {error && <p className="text-[0.85rem] text-red-600">{error}</p>}
         <button
@@ -82,8 +78,8 @@ export function LoginForm({ demoOtp, next }: { demoOtp: string; next: string }) 
           disabled={pending}
           className="bg-forest text-cream hover:bg-forest-deep flex w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 text-[0.95rem] font-medium transition-colors disabled:opacity-70"
         >
-          {pending ? <Loader2 className="size-4 animate-spin" /> : <Smartphone className="size-4" />}
-          Send code
+          {pending ? <Loader2 className="size-4 animate-spin" /> : <Mail className="size-4" />}
+          Email me a code
         </button>
       </form>
     );
@@ -92,26 +88,19 @@ export function LoginForm({ demoOtp, next }: { demoOtp: string; next: string }) 
   return (
     <form onSubmit={verify} noValidate className="space-y-5">
       <p className="text-muted text-[0.9rem] leading-relaxed">
-        Enter the code sent to <span className="text-ink font-medium">{formatPhone(sentTo)}</span>.{" "}
+        We emailed a 6-digit code to <span className="text-ink font-medium break-all">{sentTo}</span>. It can take a
+        minute, so check your spam folder too.{" "}
         <button
           type="button"
           onClick={() => {
-            setStep("phone");
+            setStep("email");
             setError(null);
           }}
           className="text-forest font-medium hover:underline"
         >
-          Change number
+          Change email
         </button>
       </p>
-
-      <div className="border-[var(--color-gold)]/40 bg-[var(--color-gold)]/10 flex items-start gap-2.5 rounded-xl border px-4 py-3">
-        <Info className="mt-0.5 size-4 shrink-0 text-[var(--color-gold)]" strokeWidth={1.8} />
-        <p className="text-ink text-[0.82rem] leading-snug">
-          Demo mode: text messages aren&rsquo;t connected yet, so use code{" "}
-          <span className="font-mono font-semibold tracking-wider">{demoOtp}</span>.
-        </p>
-      </div>
 
       <label className="block space-y-2">
         <span className="text-ink block text-[0.85rem] font-medium">Code</span>
@@ -120,7 +109,7 @@ export function LoginForm({ demoOtp, next }: { demoOtp: string; next: string }) 
           inputMode="numeric"
           autoComplete="one-time-code"
           autoFocus
-          maxLength={8}
+          maxLength={6}
           value={code}
           onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
           placeholder="••••••"
@@ -130,7 +119,7 @@ export function LoginForm({ demoOtp, next }: { demoOtp: string; next: string }) 
       {error && <p className="text-[0.85rem] text-red-600">{error}</p>}
       <button
         type="submit"
-        disabled={pending || code.length < 4}
+        disabled={pending || code.length < 6}
         className="bg-forest text-cream hover:bg-forest-deep flex w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 text-[0.95rem] font-medium transition-colors disabled:opacity-60"
       >
         {pending && <Loader2 className="size-4 animate-spin" />}

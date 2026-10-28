@@ -3,20 +3,19 @@
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
-/** Routes that supply their own shell instead of the marketing chrome. */
-// /churroai is its own product (headed for its own domain), with its own header and footer.
-const APP_ROUTES = ["/login", "/admin", "/invoice", "/churroai"];
-
 /**
- * Hides the marketing navbar and footer on the auth screen and the admin
- * area, which are laid out as product surfaces rather than pages of the
- * public site.
+ * The site is Churro AI for now: the home page, sign-in and calculator draw
+ * their own header and footer, and the academy pages (courses, blog, chef…)
+ * redirect home — see next.config.ts. Only the policy pages Razorpay needs
+ * still borrow a shared frame, so that's the only place this renders.
  */
+const FRAMED_ROUTES = ["/terms", "/privacy", "/refunds", "/contact"];
+
 export function ChromeGate({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
-  const isAppRoute = APP_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`));
+  const framed = FRAMED_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`));
 
-  if (isAppRoute) return null;
+  if (!framed) return null;
   return <>{children}</>;
 }

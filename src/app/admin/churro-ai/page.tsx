@@ -32,11 +32,11 @@ export default async function AdminChurroAiPage({ searchParams }: { searchParams
           <div>
             <h1 className="font-display text-4xl font-medium tracking-tight">Churro AI</h1>
             <p className="text-muted mt-2 text-[0.95rem]">
-              Members sign in with their phone, get a free try, then buy the pass. Pass sales also appear in Billing.
+              Members sign in with their email, get a free try, then buy the pass. Pass sales also appear in Billing.
             </p>
           </div>
           <Link
-            href="/churroai"
+            href="/"
             target="_blank"
             className="text-forest inline-flex items-center gap-1.5 text-[0.85rem] font-medium hover:underline"
           >
@@ -67,7 +67,7 @@ export default async function AdminChurroAiPage({ searchParams }: { searchParams
                 type="search"
                 name="q"
                 defaultValue={q}
-                placeholder="Search phone, name, email…"
+                placeholder="Search email or name…"
                 className="border-line/60 bg-cream-warm focus:border-forest/40 w-64 rounded-full border py-2.5 pr-4 pl-9 text-[0.85rem] outline-none"
               />
             </form>

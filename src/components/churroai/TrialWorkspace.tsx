@@ -22,7 +22,7 @@ export function TrialWorkspace({ config, member }: { config: AiConfig; member: A
             config={config}
             member={member}
             heading="Keep the calculator"
-            lede={`Get the pass now and carry on without a break — unlimited use for a full ${passLength(config.passDays)}.`}
+            lede={`Get the pass now and carry on without a break, with unlimited use for a full ${passLength(config.passDays)}.`}
           />
         </div>
       )}

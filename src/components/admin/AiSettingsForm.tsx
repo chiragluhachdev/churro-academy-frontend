@@ -17,7 +17,6 @@ export function AiSettingsForm({ initialData }: { initialData: AiConfig }) {
   const [saved, setSaved] = useState(false);
   const [enabled, setEnabled] = useState(initialData.calculatorEnabled);
   const [passName, setPassName] = useState(initialData.passName);
-  const [demoOtp, setDemoOtp] = useState(initialData.demoOtp);
   // Kept as text while editing so a field can be cleared and retyped.
   const [nums, setNums] = useState<Record<NumberKey, string>>({
     passPrice: String(initialData.passPrice),
@@ -44,7 +43,6 @@ export function AiSettingsForm({ initialData }: { initialData: AiConfig }) {
         passDays: Number(nums.passDays),
         freeTries: Number(nums.freeTries),
         trialMinutes: Number(nums.trialMinutes),
-        demoOtp: demoOtp.trim(),
       });
       if (!result.ok) return setError(result.error);
       setSaved(true);
@@ -100,24 +98,6 @@ export function AiSettingsForm({ initialData }: { initialData: AiConfig }) {
             {numberInput("trialMinutes", 1)}
           </Field>
         </div>
-      </Card>
-
-      <Card title="Sign-in">
-        <Field
-          label="Demo login code"
-          hint="Text messages aren’t connected yet, so every number signs in with this code — it’s shown on the sign-in screen. Replace this with real SMS before a wide launch."
-          className="max-w-xs"
-        >
-          <input
-            inputMode="numeric"
-            value={demoOtp}
-            onChange={(e) => {
-              touched();
-              setDemoOtp(e.target.value.replace(/\D/g, ""));
-            }}
-            className={`${inputClass} font-mono tracking-widest`}
-          />
-        </Field>
       </Card>
 
       <FormActions pending={pending} error={error} saved={saved} saveLabel="Save changes" />

@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { LogOut } from "lucide-react";
 
-import { signOutAction } from "@/app/churroai/actions";
+import { signOutAction } from "@/app/actions/churroai";
 import { Brand } from "@/components/churroai/Brand";
 import { formatPhone, type AiMember } from "@/lib/churroaiShared";
 import { cn, formatDate } from "@/lib/format";
@@ -33,7 +33,7 @@ export function AppShell({
     <div className="bg-cream min-h-screen">
       <header className="border-line/60 bg-cream/85 sticky top-0 z-40 border-b backdrop-blur-md print:hidden">
         <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-5 py-3 sm:px-8">
-          <Link href="/churroai" aria-label="Churro AI home">
+          <Link href="/" aria-label="Churro AI home">
             <Brand />
           </Link>
           <div className="flex items-center gap-3">
@@ -45,7 +45,9 @@ export function AppShell({
                 <span className="hidden sm:inline">
                   <StatusPill member={member} />
                 </span>
-                <span className="text-ink/70 hidden text-[0.85rem] md:inline">{formatPhone(member.phone)}</span>
+                <span className="text-ink/70 hidden max-w-[16rem] truncate text-[0.85rem] md:inline">
+                  {member.email || formatPhone(member.phone)}
+                </span>
                 <form action={signOutAction}>
                   <button
                     type="submit"

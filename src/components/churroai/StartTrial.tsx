@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Loader2, Sparkles, Timer } from "lucide-react";
 
-import { startTrialAction } from "@/app/churroai/actions";
+import { startTrialAction } from "@/app/actions/churroai";
 import { formatTrialLength, passLength, type AiConfig } from "@/lib/churroaiShared";
 import { formatPrice } from "@/lib/format";
 
