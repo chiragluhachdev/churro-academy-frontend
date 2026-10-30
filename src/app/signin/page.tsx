@@ -6,8 +6,7 @@ import { Check } from "lucide-react";
 import { Brand } from "@/components/churroai/Brand";
 import { LoginForm } from "@/components/churroai/LoginForm";
 import { fetchAiConfigForVisitor, fetchAiMember } from "@/lib/churroai";
-import { approxPrice, formatTrialLength, passLength } from "@/lib/churroaiShared";
-import { formatPrice } from "@/lib/format";
+import { formatTrialLength, getPassDisplayPrice, passLength } from "@/lib/churroaiShared";
 
 export const metadata: Metadata = {
   title: { absolute: "Sign in · Churro AI" },
@@ -53,7 +52,7 @@ export default async function ChurroAiLoginPage({ searchParams }: { searchParams
           <ul className="mt-6 space-y-5">
             {[
               `Your first try is free: ${formatTrialLength(config.trialMinutes)} with the Recipe Calculator.`,
-              `Then ${formatPrice(config.passPrice)}${approxPrice(config.passPrice, config.estimate) ? ` (${approxPrice(config.passPrice, config.estimate)})` : ""} a ${passLength(config.passDays)} for unlimited use.`,
+              `Then ${getPassDisplayPrice(config.passPrice, config.estimate)} a ${passLength(config.passDays)} for unlimited use.`,
               "Pay securely with Razorpay. Your GST invoice comes by email.",
             ].map((line) => (
               <li key={line} className="text-cream flex items-start gap-3 text-[1rem] leading-relaxed">

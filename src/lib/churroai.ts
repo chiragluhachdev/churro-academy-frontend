@@ -50,15 +50,31 @@ const CURRENCY_BY_COUNTRY: Record<string, string> = {
 };
 
 /**
- * The visitor's currency and today's rate, or null in India / when unknown.
- * Purely a display estimate — Razorpay always charges ₹, and the buyer's
- * bank or Razorpay's own conversion sets the final amount. PRICE_ESTIMATE_COUNTRY
- * fakes a country locally (e.g. "US"), since there's no Vercel header there.
+ * The visitor's currency and rate, or null in India / when unknown.
+ * Detects USA and international visitors via Vercel IP country or accept-language headers.
  */
 export async function fetchPriceEstimate(): Promise<PriceEstimate | null> {
-  const country = ((await headers()).get("x-vercel-ip-country") ?? process.env.PRICE_ESTIMATE_COUNTRY ?? "").toUpperCase();
-  const currency = CURRENCY_BY_COUNTRY[country];
-  if (!currency) return null;
+  const h = await headers();
+  const vercelCountry = (h.get("x-vercel-ip-country") ?? process.env.PRICE_ESTIMATE_COUNTRY ?? "").toUpperCase();
+  const acceptLang = h.get("accept-language") ?? "";
+  
+  // If explicitly India or empty without US language preference, keep as India (INR)
+  let country = vercelCountry;
+  if (!country && /en-US/i.test(acceptLang)) {
+    country = "US";
+  }
+
+  if (country === "IN" || !country) return null;
+
+  const currency = CURRENCY_BY_COUNTRY[country] ?? "USD";
+  const fallbackRates: Record<string, number> = {
+    USD: 1 / 83.5,
+    EUR: 0.92 / 83.5,
+    GBP: 0.79 / 83.5,
+    CAD: 1.36 / 83.5,
+    AUD: 1.52 / 83.5,
+  };
+
   try {
     const res = await fetch("https://open.er-api.com/v6/latest/INR", {
       next: { revalidate: 12 * 60 * 60 },
@@ -66,9 +82,11 @@ export async function fetchPriceEstimate(): Promise<PriceEstimate | null> {
     });
     const data = (await res.json()) as { rates?: Record<string, number> };
     const rate = data.rates?.[currency];
-    return typeof rate === "number" && rate > 0 ? { currency, rate } : null;
+    return typeof rate === "number" && rate > 0
+      ? { currency, rate }
+      : { currency, rate: fallbackRates[currency] ?? 1 / 83.5 };
   } catch {
-    return null;
+    return { currency, rate: fallbackRates[currency] ?? 1 / 83.5 };
   }
 }
 

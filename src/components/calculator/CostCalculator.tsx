@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import {
   Calculator,
+  ChevronDown,
   Download,
   Loader2,
   Lock,
@@ -12,11 +13,66 @@ import {
   Printer,
   RotateCcw,
   Scale,
+  Sparkles,
   Trash2,
 } from "lucide-react";
 
 import { Reveal } from "@/components/ui/Reveal";
-import { cn, formatPricePrecise } from "@/lib/format";
+import { cn } from "@/lib/format";
+
+// ---------------------------------------------------------------------------
+// Multi-currency support
+// ---------------------------------------------------------------------------
+
+interface CurrencyInfo {
+  code: string;
+  symbol: string;
+  name: string;
+  locale: string;
+  /** Approximate exchange rate relative to 1 USD */
+  rateToUSD: number;
+}
+
+const CURRENCIES: CurrencyInfo[] = [
+  { code: "INR", symbol: "₹", name: "Indian Rupee", locale: "en-IN", rateToUSD: 83.5 },
+  { code: "USD", symbol: "$", name: "US Dollar", locale: "en-US", rateToUSD: 1.0 },
+  { code: "EUR", symbol: "€", name: "Euro", locale: "de-DE", rateToUSD: 0.92 },
+  { code: "GBP", symbol: "£", name: "British Pound", locale: "en-GB", rateToUSD: 0.79 },
+  { code: "CAD", symbol: "CA$", name: "Canadian Dollar", locale: "en-CA", rateToUSD: 1.36 },
+  { code: "AUD", symbol: "AU$", name: "Australian Dollar", locale: "en-AU", rateToUSD: 1.52 },
+  { code: "AED", symbol: "AED", name: "UAE Dirham", locale: "ar-AE", rateToUSD: 3.67 },
+  { code: "SGD", symbol: "SG$", name: "Singapore Dollar", locale: "en-SG", rateToUSD: 1.35 },
+  { code: "JPY", symbol: "¥", name: "Japanese Yen", locale: "ja-JP", rateToUSD: 155.0 },
+  { code: "MXN", symbol: "MX$", name: "Mexican Peso", locale: "es-MX", rateToUSD: 17.5 },
+];
+
+const CURRENCY_MAP: Record<string, CurrencyInfo> = Object.fromEntries(CURRENCIES.map((c) => [c.code, c]));
+const DEFAULT_CURRENCY = CURRENCIES[0]; // INR
+
+function round2(value: number): number {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
+/** Format a monetary value in the given currency. */
+function formatMoney(amount: number, currency: CurrencyInfo): string {
+  return new Intl.NumberFormat(currency.locale, {
+    style: "currency",
+    currency: currency.code,
+    minimumFractionDigits: currency.code === "JPY" ? 0 : 2,
+    maximumFractionDigits: currency.code === "JPY" ? 0 : 2,
+  }).format(amount);
+}
+
+/** Convert an amount between currencies using approximate rates. */
+function convertAmount(amount: number, fromCode: string, toCode: string): number {
+  if (fromCode === toCode || !amount) return amount;
+  const from = CURRENCY_MAP[fromCode] || DEFAULT_CURRENCY;
+  const to = CURRENCY_MAP[toCode] || DEFAULT_CURRENCY;
+  const inUSD = amount / from.rateToUSD;
+  const inTarget = inUSD * to.rateToUSD;
+  return to.code === "JPY" ? Math.round(inTarget) : round2(inTarget);
+}
+
 
 // No up/down arrows on number boxes: numbers are typed, not nudged.
 const inputClass =
@@ -66,7 +122,7 @@ interface Result {
   inputs: Inputs;
   sums: Sums;
 }
-type Saved = Inputs & { result?: Result | null };
+type Saved = Inputs & { result?: Result | null; currencyCode?: string };
 
 function readSaved(): Partial<Saved> | null {
   try {
@@ -120,10 +176,6 @@ function computeSums(i: Inputs) {
   };
 }
 
-function round2(value: number): number {
-  return Math.round((value + Number.EPSILON) * 100) / 100;
-}
-
 function csvCell(value: string | number): string {
   return `"${String(value).replace(/"/g, '""')}"`;
 }
@@ -146,7 +198,16 @@ export interface TrialLimits {
  * Results appear only when Calculate is clicked, never live while typing —
  * and stay those of that click until the next one.
  */
-export function CostCalculator({ limits }: { limits?: TrialLimits } = {}) {
+export function CostCalculator({
+  limits,
+  isPaid = false,
+  defaultCurrency = "INR",
+}: {
+  limits?: TrialLimits;
+  isPaid?: boolean;
+  defaultCurrency?: string;
+} = {}) {
+  const initialCurrency = CURRENCY_MAP[defaultCurrency] || DEFAULT_CURRENCY;
   const [ingredients, setIngredients] = useState<Ingredient[]>(DEFAULTS.ingredients);
   const [originalYield, setOriginalYield] = useState(DEFAULTS.originalYield);
   const [targetYield, setTargetYield] = useState(DEFAULTS.targetYield);
@@ -158,6 +219,7 @@ export function CostCalculator({ limits }: { limits?: TrialLimits } = {}) {
   const [targetMargin, setTargetMargin] = useState(DEFAULTS.targetMargin);
   const [actualSellingPrice, setActualSellingPrice] = useState(DEFAULTS.actualSellingPrice);
   const [result, setResult] = useState<Result | null>(null);
+  const [currency, setCurrency] = useState<CurrencyInfo>(initialCurrency);
   const [restored, setRestored] = useState(false);
   const [calculating, setCalculating] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -204,11 +266,29 @@ export function CostCalculator({ limits }: { limits?: TrialLimits } = {}) {
         num(saved.targetMargin, setTargetMargin);
         num(saved.actualSellingPrice, setActualSellingPrice);
         if (saved.result?.inputs && saved.result.sums) setResult(saved.result);
+        if (saved.currencyCode && CURRENCY_MAP[saved.currencyCode]) {
+          setCurrency(CURRENCY_MAP[saved.currencyCode]);
+        } else if (defaultCurrency && CURRENCY_MAP[defaultCurrency]) {
+          setCurrency(CURRENCY_MAP[defaultCurrency]);
+        }
+      } else if (defaultCurrency && defaultCurrency !== "INR" && CURRENCY_MAP[defaultCurrency]) {
+        const targetCurr = CURRENCY_MAP[defaultCurrency];
+        setCurrency(targetCurr);
+        setIngredients(
+          DEFAULTS.ingredients.map((i) => ({
+            ...i,
+            purchasePrice: convertAmount(i.purchasePrice, "INR", targetCurr.code),
+          }))
+        );
+        setPackagingPerPiece(convertAmount(DEFAULTS.packagingPerPiece, "INR", targetCurr.code));
+        setLabourCost(convertAmount(DEFAULTS.labourCost, "INR", targetCurr.code));
+        setElectricityCost(convertAmount(DEFAULTS.electricityCost, "INR", targetCurr.code));
+        setOtherCost(convertAmount(DEFAULTS.otherCost, "INR", targetCurr.code));
       }
       setRestored(true);
     }, 0);
     return () => clearTimeout(restore);
-  }, []);
+  }, [defaultCurrency]);
 
   useEffect(() => {
     if (!restored) return;
@@ -224,6 +304,7 @@ export function CostCalculator({ limits }: { limits?: TrialLimits } = {}) {
       targetMargin,
       actualSellingPrice,
       result,
+      currencyCode: currency.code,
     };
     try {
       localStorage.setItem(STORE_KEY, JSON.stringify(saved));
@@ -243,6 +324,7 @@ export function CostCalculator({ limits }: { limits?: TrialLimits } = {}) {
     targetMargin,
     actualSellingPrice,
     result,
+    currency,
   ]);
 
   const setIngredient = (id: string, patch: Partial<Ingredient>) =>
@@ -274,7 +356,10 @@ export function CostCalculator({ limits }: { limits?: TrialLimits } = {}) {
   const changed = result !== null && JSON.stringify(result.inputs) !== JSON.stringify(inputs);
   // A free try's one calculation is spent: the recipe is read-only from here on.
   const locked = Boolean(limits?.calcUsed);
-  const money = (value?: number) => (value === undefined ? "—" : formatPricePrecise(round2(value)));
+  /** All internal calculations are in the input currency (always INR for default ingredients).
+   *  The `money` helper formats the value in the currently selected display currency. */
+  const money = (value?: number) => (value === undefined ? "—" : formatMoney(round2(value), currency));
+  const sym = currency.symbol;
 
   async function calculate() {
     if (limits) {
@@ -287,17 +372,97 @@ export function CostCalculator({ limits }: { limits?: TrialLimits } = {}) {
     setResult({ inputs: structuredClone(inputs), sums: computeSums(inputs) });
   }
 
+  function handleCurrencyChange(newCode: string) {
+    const newCurrency = CURRENCY_MAP[newCode];
+    if (!newCurrency || newCurrency.code === currency.code) return;
+
+    const oldCode = currency.code;
+    setCurrency(newCurrency);
+
+    // Convert working inputs to the new currency
+    setIngredients((prev) =>
+      prev.map((ing) => ({
+        ...ing,
+        purchasePrice: convertAmount(ing.purchasePrice, oldCode, newCode),
+      }))
+    );
+    setPackagingPerPiece((prev) => convertAmount(prev, oldCode, newCode));
+    setLabourCost((prev) => convertAmount(prev, oldCode, newCode));
+    setElectricityCost((prev) => convertAmount(prev, oldCode, newCode));
+    setOtherCost((prev) => convertAmount(prev, oldCode, newCode));
+    setActualSellingPrice((prev) => (prev > 0 ? convertAmount(prev, oldCode, newCode) : 0));
+
+    // Convert last calculated result if any
+    setResult((prevResult) => {
+      if (!prevResult) return null;
+      const convertedIngredients = prevResult.inputs.ingredients.map((ing) => ({
+        ...ing,
+        purchasePrice: convertAmount(ing.purchasePrice, oldCode, newCode),
+      }));
+      const convertedInputs: Inputs = {
+        ...prevResult.inputs,
+        ingredients: convertedIngredients,
+        packagingPerPiece: convertAmount(prevResult.inputs.packagingPerPiece, oldCode, newCode),
+        labourCost: convertAmount(prevResult.inputs.labourCost, oldCode, newCode),
+        electricityCost: convertAmount(prevResult.inputs.electricityCost, oldCode, newCode),
+        otherCost: convertAmount(prevResult.inputs.otherCost, oldCode, newCode),
+        actualSellingPrice:
+          prevResult.inputs.actualSellingPrice > 0
+            ? convertAmount(prevResult.inputs.actualSellingPrice, oldCode, newCode)
+            : 0,
+      };
+      return {
+        inputs: convertedInputs,
+        sums: computeSums(convertedInputs),
+      };
+    });
+  }
+
+  /**
+   * Pro feature for paid users: scrollable / slider batch size effect.
+   * Auto-updates all batch calculations and selling prices live in real-time.
+   */
+  function updateBatchSize(newYield: number) {
+    const safeYield = Math.max(1, newYield);
+    setTargetYield(safeYield);
+
+    // Only live-update for paid members
+    if (isPaid || !limits) {
+      const liveInputs: Inputs = {
+        ingredients,
+        originalYield,
+        targetYield: safeYield,
+        wastagePct,
+        packagingPerPiece,
+        labourCost,
+        electricityCost,
+        otherCost,
+        targetMargin,
+        actualSellingPrice,
+      };
+      setResult({
+        inputs: liveInputs,
+        sums: computeSums(liveInputs),
+      });
+    }
+  }
+
   function resetAll() {
     setResult(null);
     if (!window.confirm("Reset the calculator? Everything you've entered will be cleared.")) return;
-    setIngredients(DEFAULTS.ingredients.map((i) => ({ ...i })));
+    setIngredients(
+      DEFAULTS.ingredients.map((i) => ({
+        ...i,
+        purchasePrice: convertAmount(i.purchasePrice, "INR", currency.code),
+      }))
+    );
     setOriginalYield(DEFAULTS.originalYield);
     setTargetYield(DEFAULTS.targetYield);
     setWastagePct(DEFAULTS.wastagePct);
-    setPackagingPerPiece(DEFAULTS.packagingPerPiece);
-    setLabourCost(DEFAULTS.labourCost);
-    setElectricityCost(DEFAULTS.electricityCost);
-    setOtherCost(DEFAULTS.otherCost);
+    setPackagingPerPiece(convertAmount(DEFAULTS.packagingPerPiece, "INR", currency.code));
+    setLabourCost(convertAmount(DEFAULTS.labourCost, "INR", currency.code));
+    setElectricityCost(convertAmount(DEFAULTS.electricityCost, "INR", currency.code));
+    setOtherCost(convertAmount(DEFAULTS.otherCost, "INR", currency.code));
     setTargetMargin(DEFAULTS.targetMargin);
     setActualSellingPrice(DEFAULTS.actualSellingPrice);
   }
@@ -305,8 +470,9 @@ export function CostCalculator({ limits }: { limits?: TrialLimits } = {}) {
   function exportCsv() {
     if (!result) return;
     const { inputs: r, sums: t } = result;
+    const cc = currency.code;
     const rows: (string | number)[][] = [
-      ["Ingredient", "Qty used", "Unit", "Purchase qty", "Price paid (INR)", "Cost used (INR)"],
+      ["Ingredient", "Qty used", "Unit", "Purchase qty", `Price paid (${cc})`, `Cost used (${cc})`],
       ...r.ingredients.map((ing) => [
         ing.name || "Untitled",
         ing.qtyUsed,
@@ -326,6 +492,8 @@ export function CostCalculator({ limits }: { limits?: TrialLimits } = {}) {
       ["Total batch cost", "", "", "", "", round2(t.totalBatchCost)],
       [`Cost per piece (${r.targetYield} pieces)`, "", "", "", "", round2(t.costPerPiece)],
       [`Suggested selling price (${r.targetMargin}% margin)`, "", "", "", "", round2(t.suggestedSellingPrice)],
+      [],
+      ["Currency", cc],
     ];
     const csv = rows.map((row) => row.map(csvCell).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -359,6 +527,31 @@ export function CostCalculator({ limits }: { limits?: TrialLimits } = {}) {
         </p>
       )}
       <div className={cn("mx-auto max-w-[1400px] px-5 py-14 sm:px-8 lg:py-16", printBlocked && "print:hidden")}>
+        {/* Currency selector */}
+        <div className="mb-8 flex items-center justify-end gap-3 print:hidden">
+          <label htmlFor="currency-select" className="text-muted text-[0.82rem] font-medium">
+            Currency
+          </label>
+          <div className="relative">
+            <select
+              id="currency-select"
+              value={currency.code}
+              onChange={(e) => handleCurrencyChange(e.target.value)}
+              className={cn(
+                inputClass,
+                "w-auto min-w-[10rem] appearance-none py-2 pr-9 pl-3.5 text-[0.85rem] font-medium",
+              )}
+            >
+              {CURRENCIES.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.symbol} {c.code} — {c.name}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="text-muted pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2" />
+          </div>
+        </div>
+
         <div className="lg:grid lg:grid-cols-[1fr_380px] lg:items-start lg:gap-12 xl:gap-16">
           {/* Left column — read-only once a free try's one calculation is spent */}
           <fieldset disabled={locked} className="min-w-0 space-y-8">
@@ -379,7 +572,7 @@ export function CostCalculator({ limits }: { limits?: TrialLimits } = {}) {
                         <th className="px-3 py-2.5">Qty used</th>
                         <th className="px-3 py-2.5">Unit</th>
                         <th className="px-3 py-2.5">Purchase qty</th>
-                        <th className="px-3 py-2.5">Price paid (₹)</th>
+                        <th className="px-3 py-2.5">Price paid ({sym})</th>
                         <th className="px-3 py-2.5 text-right">Cost used</th>
                         <th className="w-9" />
                       </tr>
@@ -399,6 +592,7 @@ export function CostCalculator({ limits }: { limits?: TrialLimits } = {}) {
                             <input
                               type="number"
                               min={0}
+                              step="any"
                               value={ing.qtyUsed || ""}
                               onChange={(e) => setIngredient(ing.id, { qtyUsed: Number(e.target.value) })}
                               className={cn(inputClass, "w-20 py-2 text-center")}
@@ -421,6 +615,7 @@ export function CostCalculator({ limits }: { limits?: TrialLimits } = {}) {
                             <input
                               type="number"
                               min={0}
+                              step="any"
                               value={ing.purchaseQty || ""}
                               onChange={(e) => setIngredient(ing.id, { purchaseQty: Number(e.target.value) })}
                               className={cn(inputClass, "w-20 py-2 text-center")}
@@ -430,6 +625,7 @@ export function CostCalculator({ limits }: { limits?: TrialLimits } = {}) {
                             <input
                               type="number"
                               min={0}
+                              step="any"
                               value={ing.purchasePrice || ""}
                               onChange={(e) => setIngredient(ing.id, { purchasePrice: Number(e.target.value) })}
                               className={cn(inputClass, "w-24 py-2 text-center")}
@@ -489,12 +685,59 @@ export function CostCalculator({ limits }: { limits?: TrialLimits } = {}) {
                         type="number"
                         min={0}
                         value={targetYield || ""}
-                        onChange={(e) => setTargetYield(Number(e.target.value))}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          if (isPaid || !limits) updateBatchSize(val);
+                          else setTargetYield(val);
+                        }}
                         className={inputClass}
                       />
                       <span className="text-muted shrink-0 text-[0.8rem]">pieces</span>
                     </div>
                   </Field>
+
+                  {/* Pro feature for paid users: scrollable / slider batch size effect with live auto-updates */}
+                  {(isPaid || !limits) && (
+                    <div
+                      className="border-forest/20 bg-forest/[0.04] rounded-xl border p-3.5 transition-colors"
+                      onWheel={(e) => {
+                        e.preventDefault();
+                        const delta = e.deltaY < 0 ? 5 : -5;
+                        updateBatchSize(targetYield + delta);
+                      }}
+                    >
+                      <div className="flex items-center justify-between text-[0.78rem]">
+                        <span className="text-forest flex items-center gap-1.5 font-semibold">
+                          <Sparkles className="size-3.5" />
+                          Live batch scaling
+                        </span>
+                        <span className="text-forest font-semibold tabular-nums">{targetYield} pieces</span>
+                      </div>
+                      <p className="text-muted mt-1 text-[0.72rem]">
+                        Drag the slider or scroll mouse wheel to scale batch in real-time.
+                      </p>
+                      <input
+                        type="range"
+                        min={Math.max(1, Math.floor((originalYield || 10) * 0.2))}
+                        max={Math.max(120, (originalYield || 10) * 5)}
+                        step={1}
+                        value={targetYield}
+                        onChange={(e) => updateBatchSize(Number(e.target.value))}
+                        className="accent-forest mt-2.5 h-1.5 w-full cursor-pointer"
+                      />
+                      <div className="text-muted mt-1.5 flex justify-between text-[0.68rem]">
+                        <span>Small ({Math.max(1, Math.floor((originalYield || 10) * 0.2))})</span>
+                        <button
+                          type="button"
+                          onClick={() => updateBatchSize(originalYield)}
+                          className="text-forest hover:underline"
+                        >
+                          Original ({originalYield})
+                        </button>
+                        <span>Bulk ({Math.max(120, (originalYield || 10) * 5)})</span>
+                      </div>
+                    </div>
+                  )}
                   <Field label="Wastage" hint="Optional: trimmings, spoilage, testing.">
                     <div className="flex items-center gap-2">
                       <input
@@ -524,10 +767,11 @@ export function CostCalculator({ limits }: { limits?: TrialLimits } = {}) {
                 <Card title="3. Costs per batch" icon={Percent}>
                   <Field label="Packaging cost" hint="Per piece.">
                     <div className="flex items-center gap-2">
-                      <span className="text-muted shrink-0 text-[0.85rem]">₹</span>
+                      <span className="text-muted shrink-0 text-[0.85rem]">{sym}</span>
                       <input
                         type="number"
                         min={0}
+                        step="any"
                         value={packagingPerPiece || ""}
                         onChange={(e) => setPackagingPerPiece(Number(e.target.value))}
                         className={inputClass}
@@ -536,10 +780,11 @@ export function CostCalculator({ limits }: { limits?: TrialLimits } = {}) {
                   </Field>
                   <Field label="Labour cost" hint="Flat, for the whole batch.">
                     <div className="flex items-center gap-2">
-                      <span className="text-muted shrink-0 text-[0.85rem]">₹</span>
+                      <span className="text-muted shrink-0 text-[0.85rem]">{sym}</span>
                       <input
                         type="number"
                         min={0}
+                        step="any"
                         value={labourCost || ""}
                         onChange={(e) => setLabourCost(Number(e.target.value))}
                         className={inputClass}
@@ -548,10 +793,11 @@ export function CostCalculator({ limits }: { limits?: TrialLimits } = {}) {
                   </Field>
                   <Field label="Electricity / gas" hint="Flat, for the whole batch.">
                     <div className="flex items-center gap-2">
-                      <span className="text-muted shrink-0 text-[0.85rem]">₹</span>
+                      <span className="text-muted shrink-0 text-[0.85rem]">{sym}</span>
                       <input
                         type="number"
                         min={0}
+                        step="any"
                         value={electricityCost || ""}
                         onChange={(e) => setElectricityCost(Number(e.target.value))}
                         className={inputClass}
@@ -560,10 +806,11 @@ export function CostCalculator({ limits }: { limits?: TrialLimits } = {}) {
                   </Field>
                   <Field label="Other expenses" hint="Anything else: delivery, misc.">
                     <div className="flex items-center gap-2">
-                      <span className="text-muted shrink-0 text-[0.85rem]">₹</span>
+                      <span className="text-muted shrink-0 text-[0.85rem]">{sym}</span>
                       <input
                         type="number"
                         min={0}
+                        step="any"
                         value={otherCost || ""}
                         onChange={(e) => setOtherCost(Number(e.target.value))}
                         className={inputClass}
@@ -592,10 +839,11 @@ export function CostCalculator({ limits }: { limits?: TrialLimits } = {}) {
                   </Field>
                   <Field label="Actual selling price" hint="Optional. Leave blank to use the suggested price.">
                     <div className="flex items-center gap-2">
-                      <span className="text-muted shrink-0 text-[0.85rem]">₹</span>
+                      <span className="text-muted shrink-0 text-[0.85rem]">{sym}</span>
                       <input
                         type="number"
                         min={0}
+                        step="any"
                         value={actualSellingPrice || ""}
                         onChange={(e) => setActualSellingPrice(Number(e.target.value))}
                         placeholder={sums?.suggestedSellingPrice ? round2(sums.suggestedSellingPrice).toString() : "0"}
@@ -627,6 +875,7 @@ export function CostCalculator({ limits }: { limits?: TrialLimits } = {}) {
             <Reveal delay={0.05}>
               <div className="border-line/70 bg-cream-warm rounded-2xl border p-6 sm:p-7">
                 <h2 className="text-ink text-[1.05rem] font-semibold">Cost summary</h2>
+                <p className="text-muted mt-0.5 text-[0.72rem]">All values in {currency.code} ({currency.name})</p>
                 {!result && (
                   <p className="text-muted mt-2 text-[0.82rem] leading-relaxed">
                     Fill in your recipe, then click <strong className="text-ink">Calculate</strong> to see your costs and

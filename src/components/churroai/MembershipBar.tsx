@@ -5,8 +5,8 @@ import { useState, useTransition } from "react";
 import { AlertTriangle, Loader2, RefreshCw } from "lucide-react";
 
 import { cancelAutoRenewAction } from "@/app/actions/churroai";
-import { approxPrice, type AiConfig, type AiMember } from "@/lib/churroaiShared";
-import { formatDate, formatPrice } from "@/lib/format";
+import { getPassDisplayPrice, type AiConfig, type AiMember } from "@/lib/churroaiShared";
+import { formatDate } from "@/lib/format";
 
 /** Where a pass member sees when they're next charged, and turns auto-renewal off. */
 export function MembershipBar({ config, member }: { config: AiConfig; member: AiMember }) {
@@ -40,8 +40,7 @@ export function MembershipBar({ config, member }: { config: AiConfig; member: Ai
           ) : member.autoRenew ? (
             <>
               <RefreshCw className="text-forest size-4 shrink-0" />
-              Renews automatically on {nextCharge} for {formatPrice(config.passPrice)}
-              {approxPrice(config.passPrice, config.estimate) && ` (${approxPrice(config.passPrice, config.estimate)})`}.
+              Renews automatically on {nextCharge} for {getPassDisplayPrice(config.passPrice, config.estimate)}.
             </>
           ) : (
             <>Your pass is active until {until}. It won&rsquo;t renew on its own.</>

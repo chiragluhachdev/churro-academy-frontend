@@ -22,7 +22,7 @@ import { useEffect, useState } from "react";
 import { Sparkle4 } from "@/components/brand/Sparkle";
 import { Brand } from "@/components/churroai/Brand";
 import { LiveDemo } from "@/components/churroai/LiveDemo";
-import { approxPrice, formatTrialLength, passLength, type PriceEstimate } from "@/lib/churroaiShared";
+import { formatTrialLength, getPassDisplayPrice, passLength, type PriceEstimate } from "@/lib/churroaiShared";
 import { buttonBase, buttonSizes, buttonVariants } from "@/components/ui/Button";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { Reveal } from "@/components/ui/Reveal";
@@ -517,17 +517,8 @@ function PricingSection({ cta, pricing }: { cta: Cta; pricing: Pricing }) {
               <div className="relative flex flex-1 flex-col">
                 <p className="text-[0.95rem] font-semibold">{pricing.passName}</p>
                 <p className="font-display mt-4 text-[2.6rem] leading-none font-semibold">
-                  {formatPrice(pricing.passPrice)}
+                  {getPassDisplayPrice(pricing.passPrice, pricing.estimate)}
                   <span className="text-cream/60 font-sans text-[0.95rem] font-normal"> / {passLength(pricing.passDays)}</span>
-                </p>
-                {approxPrice(pricing.passPrice, pricing.estimate) && (
-                  <p className="text-cream/80 mt-2 text-[0.95rem]">
-                    {approxPrice(pricing.passPrice, pricing.estimate)}{" "}
-                    <span className="text-cream/55 text-[0.78rem]">in your currency, approx.</span>
-                  </p>
-                )}
-                <p className="text-cream/60 mt-2 text-[0.85rem]">
-                  GST included{pricing.estimate ? ". Charged in ₹; your bank converts it" : ""}
                 </p>
                 <ul className="mt-7 space-y-3 text-[0.9rem]">
                   {["Unlimited use of the calculator", "Print, PDF and CSV export", "Sign in from any device", "GST invoice by email"].map(
@@ -565,7 +556,7 @@ function faqs(pricing: Pricing) {
     },
     {
       q: "How much does it cost?",
-      a: `Your first try is free: ${formatTrialLength(pricing.trialMinutes)} with the full calculator. After that, the ${pricing.passName} is ${formatPrice(pricing.passPrice)} a ${passLength(pricing.passDays)}, paid through Razorpay with a GST invoice by email. ${pricing.autoRenewEnabled ? "Choose auto-renew to be charged automatically each period (cancel anytime), or pay once and it simply ends." : "It doesn't renew on its own."}`,
+      a: `Your first try is free: ${formatTrialLength(pricing.trialMinutes)} with the full calculator. After that, the ${pricing.passName} is ${getPassDisplayPrice(pricing.passPrice, pricing.estimate)} a ${passLength(pricing.passDays)}, paid securely with an invoice by email. ${pricing.autoRenewEnabled ? "Choose auto-renew to be charged automatically each period (cancel anytime), or pay once and it simply ends." : "It doesn't renew on its own."}`,
     },
     {
       q: "How do I sign in?",

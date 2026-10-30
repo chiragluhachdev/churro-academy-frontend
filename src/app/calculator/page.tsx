@@ -43,7 +43,7 @@ export default async function ChurroAiCalculatorPage() {
     return (
       <AppShell member={member} adminPreview>
         <Title />
-        <CostCalculator />
+        <CostCalculator isPaid defaultCurrency={config.estimate?.currency ?? "INR"} />
       </AppShell>
     );
   }
@@ -75,7 +75,7 @@ export default async function ChurroAiCalculatorPage() {
         <>
           <Title />
           <MembershipBar config={config} member={member} />
-          <CostCalculator />
+          <CostCalculator isPaid defaultCurrency={config.estimate?.currency ?? "INR"} />
         </>
       )}
       {member.access === "trial" && (

@@ -118,6 +118,7 @@ export function TrialWorkspace({ config, member }: { config: AiConfig; member: A
       )}
       <div inert={expired} aria-hidden={expired} className={expired ? "pointer-events-none blur-[3px] select-none" : undefined}>
         <CostCalculator
+          defaultCurrency={config.estimate?.currency ?? "INR"}
           limits={{
             calcUsed,
             exportUsed,

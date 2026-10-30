@@ -62,7 +62,11 @@ export async function startTrialAction(): Promise<Result<AiMember>> {
   );
 }
 
-export async function startPassOrderAction(buyer: { name: string; email: string }): Promise<Result<AiPassOrder>> {
+export async function startPassOrderAction(buyer: {
+  name: string;
+  email: string;
+  isInternational?: boolean;
+}): Promise<Result<AiPassOrder>> {
   return asMember(
     (token) => api<{ order: AiPassOrder }>("/ai/orders", { method: "POST", token, body: buyer }).then((r) => r.order),
     "Couldn't start checkout. Please try again.",
@@ -85,7 +89,11 @@ export async function confirmPassAction(orderId: string, razorpay?: RazorpayResu
   );
 }
 
-export async function startSubscriptionAction(buyer: { name: string; email: string }): Promise<Result<AiSubscriptionCheckout>> {
+export async function startSubscriptionAction(buyer: {
+  name: string;
+  email: string;
+  isInternational?: boolean;
+}): Promise<Result<AiSubscriptionCheckout>> {
   return asMember(
     (token) =>
       api<{ subscription: AiSubscriptionCheckout }>("/ai/subscriptions", { method: "POST", token, body: buyer }).then(

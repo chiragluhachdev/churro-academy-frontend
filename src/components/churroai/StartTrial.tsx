@@ -6,7 +6,7 @@ import { Loader2, Sparkles, Timer } from "lucide-react";
 
 import { startTrialAction } from "@/app/actions/churroai";
 import { Paywall } from "@/components/churroai/Paywall";
-import { approxPrice, formatTrialLength, passLength, type AiConfig, type AiMember } from "@/lib/churroaiShared";
+import { formatTrialLength, getPassDisplayPrice, passLength, type AiConfig, type AiMember } from "@/lib/churroaiShared";
 import { formatPrice } from "@/lib/format";
 
 export function StartTrial({ config, member }: { config: AiConfig; member: AiMember }) {
@@ -47,8 +47,7 @@ export function StartTrial({ config, member }: { config: AiConfig; member: AiMem
         start when you have your numbers ready.
       </p>
       <p className="text-muted mt-2 text-[0.82rem]">
-        One free try per email · then {formatPrice(config.passPrice)} / {passLength(config.passDays)}
-        {approxPrice(config.passPrice, config.estimate) && ` (${approxPrice(config.passPrice, config.estimate)})`}
+        One free try per email · then {getPassDisplayPrice(config.passPrice, config.estimate)} / {passLength(config.passDays)}
       </p>
       {error && <p className="mt-4 text-[0.85rem] text-red-600">{error}</p>}
       <button
@@ -68,8 +67,7 @@ export function StartTrial({ config, member }: { config: AiConfig; member: AiMem
       </button>
       <p className="mt-4">
         <button type="button" onClick={() => setBuying(true)} className="text-forest text-[0.88rem] font-medium hover:underline">
-          Skip the try · Get it now for {formatPrice(config.passPrice)} / {passLength(config.passDays)}
-          {approxPrice(config.passPrice, config.estimate) && ` (${approxPrice(config.passPrice, config.estimate)})`}
+          Skip the try · Get it now for {getPassDisplayPrice(config.passPrice, config.estimate)} / {passLength(config.passDays)}
         </button>
       </p>
     </div>

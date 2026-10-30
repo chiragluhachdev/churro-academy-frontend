@@ -1,3 +1,5 @@
+import { formatPrice } from "@/lib/format";
+
 /** Churro AI types and pure helpers — safe in client components (no server-only imports). */
 
 export interface AiConfig {
@@ -10,7 +12,7 @@ export interface AiConfig {
   trialMinutes: number;
   /** Offer "renews automatically" (Razorpay Subscriptions) at checkout, next to paying once. */
   autoRenewEnabled: boolean;
-  /** Not from the backend: the visitor's own currency, for showing an estimate beside ₹ prices. */
+  /** Not from the backend: the visitor's own currency, for showing localized price. */
   estimate?: PriceEstimate | null;
 }
 
@@ -20,14 +22,34 @@ export interface PriceEstimate {
   rate: number;
 }
 
-/** "≈ US$3.58" for visitors abroad, "" in India (or when the rate is unknown). Payment is always taken in ₹. */
-export function approxPrice(inr: number, estimate?: PriceEstimate | null): string {
-  if (!estimate) return "";
-  try {
-    return `≈ ${new Intl.NumberFormat("en", { style: "currency", currency: estimate.currency, currencyDisplay: "symbol" }).format(inr * estimate.rate)}`;
-  } catch {
-    return "";
+/** Whether the visitor is an international / non-INR visitor. */
+export function isForeignUser(estimate?: PriceEstimate | null): boolean {
+  return Boolean(estimate && estimate.currency !== "INR");
+}
+
+/**
+ * Display price for the pass:
+ * - If foreign user (e.g. USA), shows foreign currency only (e.g. "$24"), with price doubled as requested.
+ * - If Indian user, shows INR only (e.g. "₹999").
+ * Does not show other currencies side-by-side to keep pricing clean and regional.
+ */
+export function getPassDisplayPrice(passPrice: number, estimate?: PriceEstimate | null): string {
+  if (isForeignUser(estimate) && estimate) {
+    // 2x price for international currencies
+    const foreignAmount = (passPrice * 2) * estimate.rate;
+    const rounded = Math.round(foreignAmount);
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: estimate.currency,
+      maximumFractionDigits: 0,
+    }).format(rounded);
   }
+  return formatPrice(passPrice);
+}
+
+/** Legacy stub: kept empty so dual-currency comparisons are not rendered anywhere. */
+export function approxPrice(_inr: number, _estimate?: PriceEstimate | null): string {
+  return "";
 }
 
 export type AiAccess = "pass" | "trial" | "trial_available" | "locked";

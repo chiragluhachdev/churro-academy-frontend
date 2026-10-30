@@ -12,7 +12,7 @@ import {
   startSubscriptionAction,
   type RazorpayResult,
 } from "@/app/actions/churroai";
-import { approxPrice, passLength, type AiConfig, type AiMember } from "@/lib/churroaiShared";
+import { getPassDisplayPrice, isForeignUser, passLength, type AiConfig, type AiMember } from "@/lib/churroaiShared";
 import { cn, formatPrice } from "@/lib/format";
 import { openRazorpayCheckout, type RazorpaySubscriptionSuccessResponse } from "@/lib/razorpay";
 
@@ -60,8 +60,9 @@ export function Paywall({
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return setError("Enter a valid email. Your invoice goes there.");
 
     setBusy(true);
+    const isIntl = isForeignUser(config.estimate);
     if (plan === "auto") return subscribe();
-    const started = await startPassOrderAction({ name: name.trim(), email: email.trim() });
+    const started = await startPassOrderAction({ name: name.trim(), email: email.trim(), isInternational: isIntl });
     if (!started.ok) {
       setError(started.error);
       setBusy(false);
@@ -102,7 +103,8 @@ export function Paywall({
 
   /** Auto-renewal: the buyer approves a UPI Autopay or card mandate once, and the first charge is taken now. */
   async function subscribe() {
-    const started = await startSubscriptionAction({ name: name.trim(), email: email.trim() });
+    const isIntl = isForeignUser(config.estimate);
+    const started = await startSubscriptionAction({ name: name.trim(), email: email.trim(), isInternational: isIntl });
     if (!started.ok) {
       setError(started.error);
       setBusy(false);
@@ -149,17 +151,11 @@ export function Paywall({
             {config.passName}
           </span>
           <p className="font-display mt-6 text-[3rem] leading-none font-semibold">
-            {formatPrice(config.passPrice)}
+            {getPassDisplayPrice(config.passPrice, config.estimate)}
             <span className="text-cream/60 font-sans text-[1rem] font-normal"> / {passLength(config.passDays)}</span>
           </p>
-          {approxPrice(config.passPrice, config.estimate) && (
-            <p className="text-cream/80 mt-2 text-[0.95rem]">
-              {approxPrice(config.passPrice, config.estimate)}{" "}
-              <span className="text-cream/55 text-[0.78rem]">approx. Charged in ₹; your bank converts it.</span>
-            </p>
-          )}
           <p className="text-cream/60 mt-2 text-[0.82rem]">
-            {plan === "auto" ? `GST included. Renews every ${period}, cancel anytime.` : "One payment, GST included. No auto-renewal."}
+            {plan === "auto" ? `Renews every ${period}, cancel anytime.` : "One payment, no auto-renewal."}
           </p>
           <ul className="mt-8 space-y-3 text-[0.92rem]">
             {[
@@ -239,7 +235,9 @@ export function Paywall({
           className="bg-forest text-cream hover:bg-forest-deep flex w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 text-[0.95rem] font-medium transition-colors disabled:opacity-70"
         >
           {busy && <Loader2 className="size-4 animate-spin" />}
-          {plan === "auto" ? `Start auto-renew · ${formatPrice(config.passPrice)} / ${period}` : `Pay ${formatPrice(config.passPrice)}`}
+          {plan === "auto"
+            ? `Start auto-renew · ${getPassDisplayPrice(config.passPrice, config.estimate)} / ${period}`
+            : `Pay ${getPassDisplayPrice(config.passPrice, config.estimate)}`}
         </button>
         <p className="text-muted flex items-center justify-center gap-1.5 text-center text-[0.75rem]">
           <ShieldCheck className="size-3.5 shrink-0" />
