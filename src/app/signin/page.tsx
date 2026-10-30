@@ -5,8 +5,8 @@ import { Check } from "lucide-react";
 
 import { Brand } from "@/components/churroai/Brand";
 import { LoginForm } from "@/components/churroai/LoginForm";
-import { fetchAiConfig, fetchAiMember } from "@/lib/churroai";
-import { formatTrialLength, passLength } from "@/lib/churroaiShared";
+import { fetchAiConfigForVisitor, fetchAiMember } from "@/lib/churroai";
+import { approxPrice, formatTrialLength, passLength } from "@/lib/churroaiShared";
 import { formatPrice } from "@/lib/format";
 
 export const metadata: Metadata = {
@@ -21,7 +21,7 @@ function safeNext(raw: string | undefined): string {
 
 export default async function ChurroAiLoginPage({ searchParams }: { searchParams?: Promise<{ next?: string }> }) {
   const next = safeNext((await searchParams)?.next);
-  const [config, member] = await Promise.all([fetchAiConfig(), fetchAiMember()]);
+  const [config, member] = await Promise.all([fetchAiConfigForVisitor(), fetchAiMember()]);
   if (member) redirect(next);
 
   return (
@@ -53,7 +53,7 @@ export default async function ChurroAiLoginPage({ searchParams }: { searchParams
           <ul className="mt-6 space-y-5">
             {[
               `Your first try is free: ${formatTrialLength(config.trialMinutes)} with the Recipe Calculator.`,
-              `Then ${formatPrice(config.passPrice)} a ${passLength(config.passDays)} for unlimited use.`,
+              `Then ${formatPrice(config.passPrice)}${approxPrice(config.passPrice, config.estimate) ? ` (${approxPrice(config.passPrice, config.estimate)})` : ""} a ${passLength(config.passDays)} for unlimited use.`,
               "Pay securely with Razorpay. Your GST invoice comes by email.",
             ].map((line) => (
               <li key={line} className="text-cream flex items-start gap-3 text-[1rem] leading-relaxed">

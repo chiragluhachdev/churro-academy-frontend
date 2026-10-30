@@ -12,7 +12,7 @@ import {
   startSubscriptionAction,
   type RazorpayResult,
 } from "@/app/actions/churroai";
-import { passLength, type AiConfig, type AiMember } from "@/lib/churroaiShared";
+import { approxPrice, passLength, type AiConfig, type AiMember } from "@/lib/churroaiShared";
 import { cn, formatPrice } from "@/lib/format";
 import { openRazorpayCheckout, type RazorpaySubscriptionSuccessResponse } from "@/lib/razorpay";
 
@@ -152,6 +152,12 @@ export function Paywall({
             {formatPrice(config.passPrice)}
             <span className="text-cream/60 font-sans text-[1rem] font-normal"> / {passLength(config.passDays)}</span>
           </p>
+          {approxPrice(config.passPrice, config.estimate) && (
+            <p className="text-cream/80 mt-2 text-[0.95rem]">
+              {approxPrice(config.passPrice, config.estimate)}{" "}
+              <span className="text-cream/55 text-[0.78rem]">approx. Charged in ₹; your bank converts it.</span>
+            </p>
+          )}
           <p className="text-cream/60 mt-2 text-[0.82rem]">
             {plan === "auto" ? `GST included. Renews every ${period}, cancel anytime.` : "One payment, GST included. No auto-renewal."}
           </p>

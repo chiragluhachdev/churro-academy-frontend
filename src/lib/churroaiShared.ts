@@ -10,6 +10,24 @@ export interface AiConfig {
   trialMinutes: number;
   /** Offer "renews automatically" (Razorpay Subscriptions) at checkout, next to paying once. */
   autoRenewEnabled: boolean;
+  /** Not from the backend: the visitor's own currency, for showing an estimate beside ₹ prices. */
+  estimate?: PriceEstimate | null;
+}
+
+/** 1 INR in the visitor's currency, from a daily exchange rate. */
+export interface PriceEstimate {
+  currency: string;
+  rate: number;
+}
+
+/** "≈ US$3.58" for visitors abroad, "" in India (or when the rate is unknown). Payment is always taken in ₹. */
+export function approxPrice(inr: number, estimate?: PriceEstimate | null): string {
+  if (!estimate) return "";
+  try {
+    return `≈ ${new Intl.NumberFormat("en", { style: "currency", currency: estimate.currency, currencyDisplay: "symbol" }).format(inr * estimate.rate)}`;
+  } catch {
+    return "";
+  }
 }
 
 export type AiAccess = "pass" | "trial" | "trial_available" | "locked";

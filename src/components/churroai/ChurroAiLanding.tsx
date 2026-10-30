@@ -22,7 +22,7 @@ import { useEffect, useState } from "react";
 import { Sparkle4 } from "@/components/brand/Sparkle";
 import { Brand } from "@/components/churroai/Brand";
 import { LiveDemo } from "@/components/churroai/LiveDemo";
-import { formatTrialLength, passLength } from "@/lib/churroaiShared";
+import { approxPrice, formatTrialLength, passLength, type PriceEstimate } from "@/lib/churroaiShared";
 import { buttonBase, buttonSizes, buttonVariants } from "@/components/ui/Button";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { Reveal } from "@/components/ui/Reveal";
@@ -35,6 +35,8 @@ export interface Pricing {
   passDays: number;
   trialMinutes: number;
   autoRenewEnabled: boolean;
+  /** Visitors abroad: their currency, for an estimate beside the ₹ price. */
+  estimate?: PriceEstimate | null;
 }
 
 /** `live` = the calculator is switched on; `label` fits the visitor ("Try it free" / "Open Recipe Calculator"). */
@@ -518,7 +520,15 @@ function PricingSection({ cta, pricing }: { cta: Cta; pricing: Pricing }) {
                   {formatPrice(pricing.passPrice)}
                   <span className="text-cream/60 font-sans text-[0.95rem] font-normal"> / {passLength(pricing.passDays)}</span>
                 </p>
-                <p className="text-cream/60 mt-2 text-[0.85rem]">One payment, GST included</p>
+                {approxPrice(pricing.passPrice, pricing.estimate) && (
+                  <p className="text-cream/80 mt-2 text-[0.95rem]">
+                    {approxPrice(pricing.passPrice, pricing.estimate)}{" "}
+                    <span className="text-cream/55 text-[0.78rem]">in your currency, approx.</span>
+                  </p>
+                )}
+                <p className="text-cream/60 mt-2 text-[0.85rem]">
+                  GST included{pricing.estimate ? ". Charged in ₹; your bank converts it" : ""}
+                </p>
                 <ul className="mt-7 space-y-3 text-[0.9rem]">
                   {["Unlimited use of the calculator", "Print, PDF and CSV export", "Sign in from any device", "GST invoice by email"].map(
                     (item) => (

@@ -9,7 +9,7 @@ import { MembershipBar } from "@/components/churroai/MembershipBar";
 import { Paywall } from "@/components/churroai/Paywall";
 import { StartTrial } from "@/components/churroai/StartTrial";
 import { TrialWorkspace } from "@/components/churroai/TrialWorkspace";
-import { fetchAiConfig, fetchAiMember } from "@/lib/churroai";
+import { fetchAiConfigForVisitor, fetchAiMember } from "@/lib/churroai";
 import { passLength } from "@/lib/churroaiShared";
 import { getSession } from "@/lib/session";
 
@@ -36,7 +36,7 @@ function Title() {
  * always preview the tool from their own session.
  */
 export default async function ChurroAiCalculatorPage() {
-  const [config, member, session] = await Promise.all([fetchAiConfig(), fetchAiMember(), getSession()]);
+  const [config, member, session] = await Promise.all([fetchAiConfigForVisitor(), fetchAiMember(), getSession()]);
   const isAdmin = Boolean(session?.user);
 
   if (isAdmin) {

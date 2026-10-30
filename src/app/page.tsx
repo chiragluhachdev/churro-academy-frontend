@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { ChurroAiLanding } from "@/components/churroai/ChurroAiLanding";
 import { whatsappNumber } from "@/data/site";
-import { fetchAiConfig, fetchAiMember } from "@/lib/churroai";
+import { fetchAiConfigForVisitor, fetchAiMember } from "@/lib/churroai";
 import { getSession } from "@/lib/session";
 
 // The site is Churro AI for now. The old academy home is kept in app/_academy/HomePage.tsx.
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 
 export default async function HomePage() {
   const [config, member, session] = await Promise.all([
-    fetchAiConfig(),
+    fetchAiConfigForVisitor(),
     fetchAiMember().catch(() => null),
     getSession(),
   ]);
@@ -42,6 +42,7 @@ export default async function HomePage() {
         passDays: config.passDays,
         trialMinutes: config.trialMinutes,
         autoRenewEnabled: config.autoRenewEnabled,
+        estimate: config.estimate,
       }}
       signedIn={Boolean(member)}
     />

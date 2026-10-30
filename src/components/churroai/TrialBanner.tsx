@@ -2,7 +2,7 @@
 
 import { Timer } from "lucide-react";
 
-import { passLength, type AiConfig } from "@/lib/churroaiShared";
+import { approxPrice, passLength, type AiConfig } from "@/lib/churroaiShared";
 import { cn, formatPrice } from "@/lib/format";
 
 export function formatCountdown(ms: number) {
@@ -40,6 +40,7 @@ export function TrialBanner({ left, config, onUpgrade }: { left: number | null; 
         className="bg-forest text-cream hover:bg-forest-deep rounded-full px-4 py-2 text-[0.82rem] font-medium transition-colors"
       >
         Get it now · {formatPrice(config.passPrice)} / {passLength(config.passDays)}
+        {approxPrice(config.passPrice, config.estimate) && ` (${approxPrice(config.passPrice, config.estimate)})`}
       </button>
     </div>
   );
